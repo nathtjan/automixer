@@ -28,9 +28,9 @@ def switch_to_PPT():
 	print("Switched program scene to " + sceneName)
 
 
-delay_dur = 0.2
+delay_dur = 0.5
 edge_threshold = 20
-diff_threshold = 5
+diff_threshold = 0.3
 cam = cv2.VideoCapture(3)
 img_before = None
 
