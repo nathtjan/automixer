@@ -31,8 +31,14 @@ def switch_to_PPT():
 delay_dur = 0.5
 edge_threshold = 20
 diff_threshold = 0.3
+full_black_threshold = 16
 cam = cv2.VideoCapture(3)
 img_before = None
+
+
+def is_full_black(img):
+	mean = np.mean(img)
+	return mean < full_black_threshold
 
 
 def onchange():
@@ -47,7 +53,11 @@ while True:
 	if not retval:
 		continue
 
-	if img_before is not None:
+	if (
+		img_before is not None
+		and not is_full_black(img_before)
+		and not is_full_black(img)
+	):
 		img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		edge_gray = sobel_edge(img_gray)
 		edge = cv2.cvtColor(edge_gray, cv2.COLOR_GRAY2BGR)
@@ -56,8 +66,10 @@ while True:
 			- img_before.astype(np.int16)
 		).astype(np.uint8)
 		diff *= edge < edge_threshold
-		if np.mean(diff) > diff_threshold:
+		mean_diff = np.mean(diff)
+		if mean_diff > diff_threshold:
 			onchange()
+
 	img_before = img
 	time.sleep(delay_dur)
 
