@@ -31,14 +31,17 @@ def switch_to_PPT():
 delay_dur = 0.5
 edge_threshold = 20
 diff_threshold = 0.3
-full_black_threshold = 16
+full_black_threshold_mean = 36
+full_black_threshold_std = 5
 cam = cv2.VideoCapture(3)
 img_before = None
 
 
 def is_full_black(img):
 	mean = np.mean(img)
-	return mean < full_black_threshold
+	std = np.std(img)
+	return (mean < full_black_threshold_mean
+                and std < full_black_threshold_std)
 
 
 def onchange():
