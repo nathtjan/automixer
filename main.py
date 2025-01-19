@@ -35,6 +35,7 @@ full_black_threshold_mean = 36
 full_black_threshold_std = 5
 cam = cv2.VideoCapture(3)
 img_before = None
+obs_vcam_default = cv2.imread("obs_vcam_default.png")
 
 
 def is_full_black(img):
@@ -42,6 +43,11 @@ def is_full_black(img):
 	std = np.std(img)
 	return (mean < full_black_threshold_mean
                 and std < full_black_threshold_std)
+
+
+def is_obs_vcam_default(img):
+        diff = img - obs_vcam_default
+        return (diff.mean() <= 1.0 and diff.std() <= 0.5)
 
 
 def onchange():
@@ -60,6 +66,8 @@ while True:
 		img_before is not None
 		and not is_full_black(img_before)
 		and not is_full_black(img)
+                and not is_obs_vcam_default(img_before)
+                and not is_obs_vcam_default(img)
 	):
 		img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		edge_gray = sobel_edge(img_gray)
