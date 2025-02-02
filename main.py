@@ -30,7 +30,7 @@ def switch_to_PPT():
 
 delay_dur = 0.5
 edge_threshold = 20
-diff_threshold = 0.3
+diff_threshold = 5
 full_black_threshold_mean = 36
 full_black_threshold_std = 5
 cam = cv2.VideoCapture(3)
