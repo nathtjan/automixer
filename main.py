@@ -28,6 +28,7 @@ def switch_to_PPT():
 	print("Switched program scene to " + sceneName)
 
 
+onchange_delay_dur = 2
 delay_dur = 0.5
 edge_threshold = 20
 diff_threshold = 5
@@ -53,6 +54,7 @@ def is_obs_vcam_default(img):
 def onchange():
 	print("Change detected!")
 	switch_to_PPT()
+	time.sleep(onchange_delay_dur)
 
 
 print("AUTOMIXER v1")
