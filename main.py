@@ -24,7 +24,7 @@ def switch_to_PPT():
 	curr_preview = ws.call(requests.GetCurrentPreviewScene()).getSceneName()
 	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
 	if curr_program in PPT_scenenames:
-		logging.info("Program scene unchanged since current is", curr_program)
+		logging.info("Program scene unchanged since current is " + curr_program)
 		return
 	if curr_preview in PPT_scenenames:
 		sceneName = curr_preview
