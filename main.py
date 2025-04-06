@@ -1,3 +1,4 @@
+import logging
 import time
 import numpy as np
 import cv2
@@ -5,6 +6,12 @@ from obswebsocket import requests
 from obsclient import ws
 from sobel import sobel_edge
 
+
+logging.basicConfig(
+	format='%(asctime)s %(levelname)-8s %(message)s',
+	level=logging.INFO,
+	datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 ws.connect()
 
@@ -17,7 +24,7 @@ def switch_to_PPT():
 	curr_preview = ws.call(requests.GetCurrentPreviewScene()).getSceneName()
 	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
 	if curr_program in PPT_scenenames:
-		print("Program scene unchanged since current is", curr_program)
+		logging.info("Program scene unchanged since current is", curr_program)
 		return
 	if curr_preview in PPT_scenenames:
 		sceneName = curr_preview
@@ -25,7 +32,7 @@ def switch_to_PPT():
 		sceneName = default_PPT_scenename
 
 	ws.call(requests.SetCurrentProgramScene(sceneName=sceneName))
-	print("Switched program scene to " + sceneName)
+	logging.info("Switched program scene to " + sceneName)
 
 
 onchange_delay_dur = 2
@@ -52,13 +59,13 @@ def is_obs_vcam_default(img):
 
 
 def onchange():
-	print("Change detected!")
+	logging.info("Change detected!")
 	switch_to_PPT()
 	time.sleep(onchange_delay_dur)
 
 
-print("AUTOMIXER v1")
-print("Running...")
+logging.info("AUTOMIXER v1")
+logging.info("Running...")
 while True:
 	retval, img = cam.read()
 	if not retval:
