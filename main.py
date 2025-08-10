@@ -36,7 +36,7 @@ def switch_to_PPT():
 
 
 onchange_delay_dur = 2
-delay_dur = 0.5
+delay_dur = 0.1
 edge_threshold = 20
 diff_threshold = 5
 full_black_threshold_mean = 36
