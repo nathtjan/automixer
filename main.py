@@ -9,7 +9,7 @@ import easyocr
 from recorder import Recorder
 from transcriber import Transcriber
 import queue
-import pylcs
+from rouge import Rouge
 
 
 logging.basicConfig(
@@ -57,6 +57,7 @@ recorder = Recorder(1, recording_queue)
 transcriber = Transcriber(recording_queue, transcription_queue)
 slide_text = ""
 transcription = ""
+rouge = Rouge(metrics=["rouge-1"], stats=["r"])
 
 
 def is_full_black(img):
@@ -128,11 +129,11 @@ while True:
 		    ocr_result = reader.readtext(img)
 		    slide_text = " ".join([elem[1] for elem in ocr_result])
 
-		lcs_length = pylcs.lcs_sequence_length(transcription, slide_text)
-		if not slide_text:
-		    continue
-		lcs_ratio = lcs_length / len(slide_text)
-		logging.info(f"lcs_ratio: {lcs_ratio}")
+		if transcription:
+			rouge_score = rouge.get_scores(slide_text, transcription)
+		else:
+			rouge_score = 0
+		logging.info(f"rouge_score: {rouge_score}")
 	logging.info(f"slide_text: {slide_text}")
 	logging.info(f"transcription: {transcription}")
 
