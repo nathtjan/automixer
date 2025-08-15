@@ -5,6 +5,11 @@ import cv2
 from obswebsocket import requests
 from obsclient import ws
 from sobel import sobel_edge
+import easyocr
+from recorder import Recorder
+from transcriber import Transcriber
+import queue
+import pylcs
 
 
 logging.basicConfig(
@@ -45,6 +50,14 @@ cam = cv2.VideoCapture(3)
 img_before = None
 obs_vcam_default = cv2.imread("obs_vcam_default.png")
 
+reader = easyocr.Reader(["id", "en"])
+recording_queue = queue.Queue()
+transcription_queue = queue.Queue()
+recorder = Recorder(1, recording_queue)
+transcriber = Transcriber(recording_queue, transcription_queue)
+slide_text = ""
+transcription = ""
+
 
 def is_full_black(img):
 	mean = np.mean(img)
@@ -64,7 +77,12 @@ def onchange():
 	time.sleep(onchange_delay_dur)
 
 
-logging.info("AUTOMIXER v1")
+def clear_queue(queue):
+        while not queue.empty():
+                queue.get()
+
+
+logging.info("AUTOMIXER v2")
 logging.info("Running...")
 while True:
 	retval, img = cam.read()
@@ -92,6 +110,31 @@ while True:
 
 	img_before = img
 	time.sleep(delay_dur)
+
+	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
+	if curr_program not in PPT_scenenames:
+		recorder.stop()
+		transcriber.stop()
+		slide_text = ""
+		transcription = ""
+		clear_queue(recording_queue)
+		clear_queue(transcription_queue)
+	else:
+		recorder.start()
+		transcriber.start()
+		while not transcription_queue.empty():
+		    transcription += " " + transcription_queue.get()
+		if not slide_text:
+		    ocr_result = reader.readtext(img)
+		    slide_text = " ".join([elem[1] for elem in ocr_result])
+
+		lcs_length = pylcs.lcs_sequence_length(transcription, slide_text)
+		if not slide_text:
+		    continue
+		lcs_ratio = lcs_length / len(slide_text)
+		logging.info(f"lcs_ratio: {lcs_ratio}")
+	logging.info(f"slide_text: {slide_text}")
+	logging.info(f"transcription: {transcription}")
 
 
 ws.disconnect()
