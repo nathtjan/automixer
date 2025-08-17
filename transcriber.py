@@ -17,13 +17,18 @@ class Transcriber:
             logging.info(f"Using device: {device}")
             model = whisper.load_model("small", device=device)
         self.model = model
+        self._should_stop = False
         self._thread = None
 
     def run(self):
         while True:
+            if self._should_stop:
+                break
             audio_chunk = []
             # Collect enough audio for one transcription
             for _ in range(200):
+                if self.recording_queue.empty():
+                    break
                 chunk = self.recording_queue.get()
                 audio_chunk.extend(chunk)
 
@@ -49,6 +54,7 @@ class Transcriber:
     def start(self):
         if self.is_alive():
             return
+        self._should_stop = False
         self._thread = threading.Thread(target=self.run, daemon=True)
         self._thread.start()
         logging.info("Transcriber started")
@@ -56,6 +62,7 @@ class Transcriber:
     def stop(self):
         if not self.is_alive():
             return
+        self._should_stop = True
         self._thread.join()
         self._thread = None
         logging.info("Transcriber stopped")

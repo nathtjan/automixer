@@ -53,7 +53,7 @@ obs_vcam_default = cv2.imread("obs_vcam_default.png")
 reader = easyocr.Reader(["id", "en"])
 recording_queue = queue.Queue()
 transcription_queue = queue.Queue()
-recorder = Recorder(1, recording_queue)
+recorder = Recorder(23, recording_queue)
 transcriber = Transcriber(recording_queue, transcription_queue)
 slide_text = ""
 transcription = ""
@@ -110,7 +110,6 @@ while True:
 			onchange()
 
 	img_before = img
-	time.sleep(delay_dur)
 
 	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
 	if curr_program not in PPT_scenenames:
@@ -136,6 +135,8 @@ while True:
 		logging.info(f"rouge_score: {rouge_score}")
 	logging.info(f"slide_text: {slide_text}")
 	logging.info(f"transcription: {transcription}")
+
+	time.sleep(delay_dur)
 
 
 ws.disconnect()

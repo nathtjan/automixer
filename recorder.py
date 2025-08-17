@@ -11,6 +11,7 @@ class Recorder:
         self.device = device
         self.output_queue = output_queue
         self.block_duration = block_duration
+        self._should_stop = False
         self._thread = None
 
     def callback(self, indata, frames, time_info, status):
@@ -25,6 +26,8 @@ class Recorder:
         with sd.InputStream(samplerate=16000, channels=1, callback=self.callback):
             logging.info("Recording... Press Ctrl+C to stop.")
             while True:
+                if self._should_stop:
+                    break
                 time.sleep(0.1)  # Keep main thread alive
 
     def is_alive(self):
@@ -33,6 +36,7 @@ class Recorder:
     def start(self):
         if self.is_alive():
             return
+        self._should_stop = False
         self._thread = threading.Thread(target=self.run, daemon=True)
         self._thread.start()
         logging.info("Recorder started")
@@ -40,6 +44,7 @@ class Recorder:
     def stop(self):
         if not self.is_alive():
             return
+        self._should_stop = True
         self._thread.join()
         self._thread = None
         logging.info("Recorder stopped")
