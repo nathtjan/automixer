@@ -57,7 +57,7 @@ recorder = Recorder(23, recording_queue)
 transcriber = Transcriber(recording_queue, transcription_queue)
 slide_text = ""
 transcription = ""
-rouge = Rouge(metrics=["rouge-1"], stats=["r"])
+rouge = Rouge()
 
 
 def is_full_black(img):
@@ -128,13 +128,13 @@ while True:
 		    ocr_result = reader.readtext(img)
 		    slide_text = " ".join([elem[1] for elem in ocr_result])
 
-		if transcription:
+		if slide_text and transcription:
 			rouge_score = rouge.get_scores(slide_text, transcription)
 		else:
 			rouge_score = 0
 		logging.info(f"rouge_score: {rouge_score}")
-	logging.info(f"slide_text: {slide_text}")
-	logging.info(f"transcription: {transcription}")
+
+		logging.info(f"transcription: {transcription}")
 
 	time.sleep(delay_dur)
 

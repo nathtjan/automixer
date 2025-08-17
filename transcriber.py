@@ -15,7 +15,7 @@ class Transcriber:
             use_cuda = torch.cuda.is_available()
             device = "cuda" if use_cuda else "cpu"
             logging.info(f"Using device: {device}")
-            model = whisper.load_model("small", device=device)
+            model = whisper.load_model("medium", device=device)
         self.model = model
         self._should_stop = False
         self._thread = None
@@ -26,16 +26,27 @@ class Transcriber:
                 break
             audio_chunk = []
             # Collect enough audio for one transcription
-            for _ in range(200):
+            for _ in range(50):
                 if self.recording_queue.empty():
                     break
                 chunk = self.recording_queue.get()
+                chunk_np = np.array(chunk).astype(np.float32)
+                abs_mean_chunk = np.abs(chunk_np).mean()
+                if abs_mean_chunk <  1e-3:
+                    logging.debug("Empty chunk skipped")
+                    continue
                 audio_chunk.extend(chunk)
+
+            # Skip if no audio
+            if not audio_chunk:
+                logging.debug("No audio in queue, transcription skipped")
+                continue
 
             audio_np = np.array(audio_chunk).astype(np.float32)
 
             # Skip empty audio
             abs_mean_audio = np.abs(audio_np).mean()
+            logging.info(f"abs_mean_audio: {abs_mean_audio}")
             if abs_mean_audio <  1e-3:
                 logging.debug("Empty audio skipped")
                 continue
