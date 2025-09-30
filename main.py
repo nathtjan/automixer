@@ -7,7 +7,7 @@ from obsclient import ws
 from sobel import sobel_edge
 import easyocr
 from recorder import Recorder
-from transcriber import Transcriber
+from transcriber import OpenAITranscriber
 import queue
 from metric import lcs, lcs_1gram
 
@@ -66,7 +66,7 @@ reader = easyocr.Reader(["id", "en"])
 recording_queue = queue.Queue()
 transcription_queue = queue.Queue()
 recorder = Recorder(23, recording_queue)
-transcriber = Transcriber(recording_queue, transcription_queue)
+transcriber = OpenAITranscriber(recording_queue, transcription_queue)
 slide_text = ""
 transcription = ""
 
@@ -156,8 +156,9 @@ while True:
 		logging.debug(f"rouge_score: {rouge_score}")
 		if rouge_score >= 0.8:
 			logging.info("Rouge score crosses threshold.")
-			time.sleep(5)
+			time.sleep(3)
 			switch_to_cam()
+			time.sleep(onchange_delay_dur)
 
 
 	time.sleep(delay_dur)

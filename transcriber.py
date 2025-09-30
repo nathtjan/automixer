@@ -5,9 +5,11 @@ import whisper
 import threading
 import time
 import torch
+from openai import OpenAI
+from utils import numpy_to_wav_buffer
 
 
-class Transcriber:
+class LocalTranscriber:
     def __init__(self, recording_queue, transcription_queue, model=None):
         self.recording_queue = recording_queue
         self.transcription_queue = transcription_queue
@@ -59,6 +61,74 @@ class Transcriber:
             result = self.model.transcribe(audio_np, language="id", fp16=False)
             result = result['text'].strip()
             self.transcription_queue.put(result)
+            
+
+    def is_alive(self):
+        return (self._thread is not None) and self._thread.is_alive()
+
+    def start(self):
+        if self.is_alive():
+            return
+        self._should_stop = False
+        self._thread = threading.Thread(target=self.run, daemon=True)
+        self._thread.start()
+        logging.info("Transcriber started")
+
+    def stop(self):
+        if not self.is_alive():
+            return
+        self._should_stop = True
+        self._thread.join()
+        self._thread = None
+        logging.info("Transcriber stopped")
+
+
+class OpenAITranscriber:
+    def __init__(self, recording_queue, transcription_queue, model="gpt-4o-transcribe"):
+        self.recording_queue = recording_queue
+        self.transcription_queue = transcription_queue
+        self.model = model
+        self.client = OpenAI()
+        self._should_stop = False
+        self._thread = None
+
+    def run(self):
+        while True:
+            if self._should_stop:
+                break
+            audio_chunk = []
+            # Collect enough audio for one transcription
+            for _ in range(200):
+                if self.recording_queue.empty():
+                    break
+                chunk = self.recording_queue.get()
+                audio_chunk.extend(chunk)
+
+            # Skip if no audio
+            if not audio_chunk:
+                logging.debug("No audio in queue, transcription skipped")
+                continue
+
+            audio_np = np.array(audio_chunk).astype(np.float32)
+
+            # Clean audio (replace NaN with 0)
+            audio_np[audio_np!=audio_np] = 0
+
+            # Run Whisper transcription
+            logging.debug("Transcribing...")
+            
+            try:
+                wav_buffer = numpy_to_wav_buffer(16000, audio_np)
+                response = self.client.audio.transcriptions.create(
+                    model=self.model,
+                    file=wav_buffer,
+                    language="id"
+                )
+                result = response.text.strip()
+                self.transcription_queue.put(result)
+            except Exception as e:
+                logging.error(f"Error during transcription: {str(e)}")
+                continue
             
 
     def is_alive(self):
