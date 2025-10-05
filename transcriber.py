@@ -84,11 +84,20 @@ class LocalTranscriber:
 
 
 class OpenAITranscriber:
-    def __init__(self, recording_queue, transcription_queue, model="gpt-4o-transcribe"):
+    def __init__(
+        self,
+        recording_queue,
+        transcription_queue,
+        model="gpt-4o-transcribe",
+        max_retry_pop=10,
+        retry_pop_delay=0.01
+    ):
         self.recording_queue = recording_queue
         self.transcription_queue = transcription_queue
         self.model = model
         self.client = OpenAI()
+        self.max_retry_pop = max_retry_pop
+        self.retry_pop_delay = retry_pop_delay
         self._should_stop = False
         self._thread = None
 
@@ -98,8 +107,12 @@ class OpenAITranscriber:
                 break
             audio_chunk = []
             # Collect enough audio for one transcription
-            for _ in range(200):
-                if self.recording_queue.empty():
+            for _ in range(100):
+                for _ in range(1 + self.max_retry_pop):  # first attempt + retries
+                    if not self.recording_queue.empty():
+                        break
+                    time.sleep(self.retry_pop_delay)
+                else:
                     break
                 chunk = self.recording_queue.get()
                 audio_chunk.extend(chunk)
