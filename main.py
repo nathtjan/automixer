@@ -62,6 +62,11 @@ cam = cv2.VideoCapture(3)
 img_before = None
 obs_vcam_default = cv2.imread("obs_vcam_default.png")
 
+rouge_1gram_weight = 0.9
+rouge_l_weight = 0.1
+rouge_threshold = 0.8
+transition_back_delay = 1
+
 reader = easyocr.Reader(["id", "en"])
 recording_queue = queue.Queue()
 transcription_queue = queue.Queue()
@@ -152,13 +157,13 @@ while True:
 			rouge_1gram = len(" ".join(lcs_result)) / len(slide_text)
 			lcs_length, lcs_result = lcs(slide_text, transcription)
 			rouge_l = lcs_length / len(slide_text)
-			rouge_score = 0.9 * rouge_1gram + 0.1 * rouge_l
+			rouge_score = rouge_1gram_weight * rouge_1gram + rouge_l_weight * rouge_l
 		else:
 			rouge_score = 0
 		logging.debug(f"rouge_score: {rouge_score}")
-		if rouge_score >= 0.8:
+		if rouge_score >= rouge_threshold:
 			logging.info("Rouge score crosses threshold.")
-			time.sleep(1)
+			time.sleep(transition_back_delay)
 			switch_to_cam()
 			time.sleep(onchange_delay_dur)
 
