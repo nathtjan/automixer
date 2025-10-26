@@ -158,7 +158,7 @@ while True:
 		logging.debug(f"rouge_score: {rouge_score}")
 		if rouge_score >= 0.8:
 			logging.info("Rouge score crosses threshold.")
-			time.sleep(3)
+			time.sleep(1)
 			switch_to_cam()
 			time.sleep(onchange_delay_dur)
 
