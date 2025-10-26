@@ -86,6 +86,8 @@ def is_obs_vcam_default(img):
 def onchange():
 	logging.info("Change detected!")
 	switch_to_PPT()
+	slide_text = ""
+	transcription = ""
 	recorder.start()
 	time.sleep(onchange_delay_dur)
 
