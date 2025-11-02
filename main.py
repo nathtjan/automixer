@@ -1,4 +1,6 @@
+from datetime import datetime
 import logging
+import os
 import time
 import numpy as np
 import cv2
@@ -12,11 +14,35 @@ import queue
 from metric import lcs, lcs_1gram
 
 
-logging.basicConfig(
-	format='%(asctime)s %(levelname)-8s %(message)s',
-	level=logging.INFO,
-	datefmt='%Y-%m-%d %H:%M:%S'
-)
+def setup_logger(base_dir="./logs"):
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+
+        filename = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
+        filename += ".txt"
+
+        save_path = os.path.join(base_dir, filename)
+
+        file_handler = logging.FileHandler(save_path)
+        file_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+        	"%(asctime)s %(levelname)-8s %(message)s",
+                datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        logging.basicConfig(
+        	level=logging.INFO,
+        	format="%(asctime)s %(levelname)-8s %(message)s",
+                datefmt='%Y-%m-%d %H:%M:%S'
+        )
+
+        return logger
+
+
+logger = setup_logger()
+
 
 ws.connect()
 
@@ -30,7 +56,7 @@ def switch_to_PPT():
 	curr_preview = ws.call(requests.GetCurrentPreviewScene()).getSceneName()
 	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
 	if curr_program in PPT_scenenames:
-		logging.info("Program scene unchanged since current is " + curr_program)
+		logger.info("Program scene unchanged since current is " + curr_program)
 		return
 	if curr_preview in PPT_scenenames:
 		sceneName = curr_preview
@@ -38,18 +64,18 @@ def switch_to_PPT():
 		sceneName = default_PPT_scenename
 
 	ws.call(requests.SetCurrentProgramScene(sceneName=sceneName))
-	logging.info("Switched program scene to " + sceneName)
+	logger.info("Switched program scene to " + sceneName)
 
 
 def switch_to_cam():
 	curr_preview = ws.call(requests.GetCurrentPreviewScene()).getSceneName()
 	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
 	if curr_program == cam_scenename:
-		logging.info("Program scene unchanged since current is " + curr_program)
+		logger.info("Program scene unchanged since current is " + curr_program)
 		return
 
 	ws.call(requests.SetCurrentProgramScene(sceneName=cam_scenename))
-	logging.info("Switched program scene to " + cam_scenename)
+	logger.info("Switched program scene to " + cam_scenename)
 
 
 onchange_delay_dur = 2
@@ -89,7 +115,7 @@ def is_obs_vcam_default(img):
 
 
 def onchange():
-	logging.info("Change detected!")
+	logger.info("Change detected!")
 	switch_to_PPT()
 	slide_text = ""
 	transcription = ""
@@ -102,8 +128,8 @@ def clear_queue(queue):
                 queue.get()
 
 
-logging.info("AUTOMIXER v2")
-logging.info("Running...")
+logger.info("AUTOMIXER v2")
+logger.info("Running...")
 while True:
 	retval, img = cam.read()
 	if not retval:
@@ -145,13 +171,11 @@ while True:
 			if transcription.endswith("..."):
 				transcription = transcription[:-3]
 			transcription += " " + transcription_queue.get().lower()
-			logging.debug(f"Transcription: {transcription}")
-			print(f"Transcription: {transcription}")
+			logger.debug(f"Transcription: {transcription}")
 		if not slide_text:
 		    ocr_result = reader.readtext(img)
 		    slide_text = " ".join([elem[1] for elem in ocr_result]).lower()
-		    logging.debug(f"Slide text: {slide_text}")
-		    print(f"Slide text: {slide_text}")
+		    logger.debug(f"Slide text: {slide_text}")
 		if slide_text and transcription:
 			lcs_length, lcs_result = lcs_1gram(slide_text.split(), transcription.split(), 3)
 			rouge_1gram = len(" ".join(lcs_result)) / len(slide_text)
@@ -160,9 +184,9 @@ while True:
 			rouge_score = rouge_1gram_weight * rouge_1gram + rouge_l_weight * rouge_l
 		else:
 			rouge_score = 0
-		logging.debug(f"rouge_score: {rouge_score}")
+		logger.debug(f"rouge_score: {rouge_score}")
 		if rouge_score >= rouge_threshold:
-			logging.info("Rouge score crosses threshold.")
+			logger.info("Rouge score crosses threshold.")
 			time.sleep(transition_back_delay)
 			switch_to_cam()
 			time.sleep(onchange_delay_dur)
