@@ -15,30 +15,30 @@ from metric import lcs, lcs_1gram
 
 
 def setup_logger(base_dir="./logs"):
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
 
-        filename = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-        filename += ".txt"
+    filename = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
+    filename += ".txt"
 
-        save_path = os.path.join(base_dir, filename)
+    save_path = os.path.join(base_dir, filename)
 
-        file_handler = logging.FileHandler(save_path)
-        file_handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-        	"%(asctime)s %(levelname)-8s %(message)s",
-                datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+    file_handler = logging.FileHandler(save_path)
+    file_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+    	"%(asctime)s %(levelname)-8s %(message)s",
+            datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
-        logging.basicConfig(
-        	level=logging.INFO,
-        	format="%(asctime)s %(levelname)-8s %(message)s",
-                datefmt='%Y-%m-%d %H:%M:%S'
-        )
+    logging.basicConfig(
+    	level=logging.INFO,
+    	format="%(asctime)s %(levelname)-8s %(message)s",
+            datefmt='%Y-%m-%d %H:%M:%S'
+    )
 
-        return logger
+    return logger
 
 
 logger = setup_logger()
@@ -110,8 +110,8 @@ def is_full_black(img):
 
 
 def is_obs_vcam_default(img):
-        diff = img - obs_vcam_default
-        return (diff.mean() <= 1.0 and diff.std() <= 0.5)
+    diff = img - obs_vcam_default
+    return (diff.mean() <= 1.0 and diff.std() <= 0.5)
 
 
 def onchange():
@@ -124,8 +124,8 @@ def onchange():
 
 
 def clear_queue(queue):
-        while not queue.empty():
-                queue.get()
+    while not queue.empty():
+        queue.get()
 
 
 logger.info("AUTOMIXER v2")
@@ -139,8 +139,8 @@ while True:
 		img_before is not None
 		and not is_full_black(img_before)
 		and not is_full_black(img)
-                and not is_obs_vcam_default(img_before)
-                and not is_obs_vcam_default(img)
+        and not is_obs_vcam_default(img_before)
+        and not is_obs_vcam_default(img)
 	):
 		img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		edge_gray = sobel_edge(img_gray)
