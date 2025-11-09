@@ -107,7 +107,7 @@ class OpenAITranscriber:
                 break
             audio_chunk = []
             # Collect enough audio for one transcription
-            for _ in range(100):
+            for _ in range(50):
                 for _ in range(1 + self.max_retry_pop):  # first attempt + retries
                     if not self.recording_queue.empty():
                         break
