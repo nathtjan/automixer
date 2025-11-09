@@ -100,6 +100,7 @@ recorder = Recorder(23, recording_queue)
 transcriber = OpenAITranscriber(recording_queue, transcription_queue)
 slide_text = ""
 transcription = ""
+rouge_threshold_crossed_timestamp = None
 
 
 def is_full_black(img):
@@ -115,8 +116,13 @@ def is_obs_vcam_default(img):
 
 
 def onchange():
+	global slide_text, transcription, \
+		rouge_threshold_crossed_timestamp, \
+		recorder
+
 	logger.info("Change detected!")
 	switch_to_PPT()
+	rouge_threshold_crossed_timestamp = None
 	slide_text = ""
 	transcription = ""
 	recorder.start()
@@ -158,6 +164,7 @@ while True:
 
 	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
 	if curr_program not in PPT_scenenames:
+		rouge_threshold_crossed_timestamp = None
 		recorder.stop()
 		transcriber.stop()
 		slide_text = ""
@@ -186,10 +193,16 @@ while True:
 			rouge_score = 0
 		logger.debug(f"rouge_score: {rouge_score}")
 		if rouge_score >= rouge_threshold:
-			logger.info("Rouge score crosses threshold.")
-			time.sleep(transition_back_delay)
-			switch_to_cam()
-			time.sleep(onchange_delay_dur)
+			if rouge_threshold_crossed_timestamp is None:
+				logger.info("Rouge score crosses threshold.")
+				rouge_threshold_crossed_timestamp = time.time()
+			else:
+				time_passed = (
+					time.time() - rouge_threshold_crossed_timestamp
+				)
+				if time_passed >= transition_back_delay:
+					switch_to_cam()
+					time.sleep(onchange_delay_dur)
 
 
 	time.sleep(delay_dur)
