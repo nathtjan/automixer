@@ -26,16 +26,16 @@ def setup_logger(base_dir="./logs"):
     file_handler = logging.FileHandler(save_path)
     file_handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
-    	"%(asctime)s %(levelname)-8s %(message)s",
-            datefmt='%Y-%m-%d %H:%M:%S'
+        "%(asctime)s %(levelname)-8s %(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
     logging.basicConfig(
-    	level=logging.INFO,
-    	format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt='%Y-%m-%d %H:%M:%S'
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)-8s %(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
 
     return logger
@@ -53,29 +53,29 @@ default_PPT_scenename = PPT_scenenames[0]
 
 
 def switch_to_PPT():
-	curr_preview = ws.call(requests.GetCurrentPreviewScene()).getSceneName()
-	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
-	if curr_program in PPT_scenenames:
-		logger.info("Program scene unchanged since current is " + curr_program)
-		return
-	if curr_preview in PPT_scenenames:
-		sceneName = curr_preview
-	else:
-		sceneName = default_PPT_scenename
+    curr_preview = ws.call(requests.GetCurrentPreviewScene()).getSceneName()
+    curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
+    if curr_program in PPT_scenenames:
+        logger.info("Program scene unchanged since current is " + curr_program)
+        return
+    if curr_preview in PPT_scenenames:
+        sceneName = curr_preview
+    else:
+        sceneName = default_PPT_scenename
 
-	ws.call(requests.SetCurrentProgramScene(sceneName=sceneName))
-	logger.info("Switched program scene to " + sceneName)
+    ws.call(requests.SetCurrentProgramScene(sceneName=sceneName))
+    logger.info("Switched program scene to " + sceneName)
 
 
 def switch_to_cam():
-	curr_preview = ws.call(requests.GetCurrentPreviewScene()).getSceneName()
-	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
-	if curr_program == cam_scenename:
-		logger.info("Program scene unchanged since current is " + curr_program)
-		return
+    curr_preview = ws.call(requests.GetCurrentPreviewScene()).getSceneName()
+    curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
+    if curr_program == cam_scenename:
+        logger.info("Program scene unchanged since current is " + curr_program)
+        return
 
-	ws.call(requests.SetCurrentProgramScene(sceneName=cam_scenename))
-	logger.info("Switched program scene to " + cam_scenename)
+    ws.call(requests.SetCurrentProgramScene(sceneName=cam_scenename))
+    logger.info("Switched program scene to " + cam_scenename)
 
 
 onchange_delay_dur = 2
@@ -104,10 +104,10 @@ rouge_threshold_crossed_timestamp = None
 
 
 def is_full_black(img):
-	mean = np.mean(img)
-	std = np.std(img)
-	return (mean < full_black_threshold_mean
-                and std < full_black_threshold_std)
+    mean = np.mean(img)
+    std = np.std(img)
+    return (mean < full_black_threshold_mean
+            and std < full_black_threshold_std)
 
 
 def is_obs_vcam_default(img):
@@ -116,17 +116,17 @@ def is_obs_vcam_default(img):
 
 
 def onchange():
-	global slide_text, transcription, \
-		rouge_threshold_crossed_timestamp, \
-		recorder
+    global slide_text, transcription, \
+        rouge_threshold_crossed_timestamp, \
+        recorder
 
-	logger.info("Change detected!")
-	switch_to_PPT()
-	rouge_threshold_crossed_timestamp = None
-	slide_text = ""
-	transcription = ""
-	recorder.start()
-	time.sleep(onchange_delay_dur)
+    logger.info("Change detected!")
+    switch_to_PPT()
+    rouge_threshold_crossed_timestamp = None
+    slide_text = ""
+    transcription = ""
+    recorder.start()
+    time.sleep(onchange_delay_dur)
 
 
 def clear_queue(queue):
@@ -137,75 +137,75 @@ def clear_queue(queue):
 logger.info("AUTOMIXER v2")
 logger.info("Running...")
 while True:
-	retval, img = cam.read()
-	if not retval:
-		continue
+    retval, img = cam.read()
+    if not retval:
+        continue
 
-	if (
-		img_before is not None
-		and not is_full_black(img_before)
-		and not is_full_black(img)
+    if (
+            img_before is not None
+            and not is_full_black(img_before)
+            and not is_full_black(img)
         and not is_obs_vcam_default(img_before)
         and not is_obs_vcam_default(img)
-	):
-		img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-		edge_gray = sobel_edge(img_gray)
-		edge = cv2.cvtColor(edge_gray, cv2.COLOR_GRAY2BGR)
-		diff = np.abs(
-			img.astype(np.int16)
-			- img_before.astype(np.int16)
-		).astype(np.uint8)
-		diff *= edge < edge_threshold
-		mean_diff = np.mean(diff)
-		if mean_diff > diff_threshold:
-			onchange()
+    ):
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        edge_gray = sobel_edge(img_gray)
+        edge = cv2.cvtColor(edge_gray, cv2.COLOR_GRAY2BGR)
+        diff = np.abs(
+            img.astype(np.int16)
+            - img_before.astype(np.int16)
+        ).astype(np.uint8)
+        diff *= edge < edge_threshold
+        mean_diff = np.mean(diff)
+        if mean_diff > diff_threshold:
+            onchange()
 
-	img_before = img
+    img_before = img
 
-	curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
-	if curr_program not in PPT_scenenames:
-		rouge_threshold_crossed_timestamp = None
-		recorder.stop()
-		transcriber.stop()
-		slide_text = ""
-		transcription = ""
-		clear_queue(recording_queue)
-		clear_queue(transcription_queue)
-	else:
-		recorder.start()
-		transcriber.start()
-		while not transcription_queue.empty():
-			if transcription.endswith("..."):
-				transcription = transcription[:-3]
-			transcription += " " + transcription_queue.get().lower()
-			logger.debug(f"Transcription: {transcription}")
-		if not slide_text:
-		    ocr_result = reader.readtext(img)
-		    slide_text = " ".join([elem[1] for elem in ocr_result]).lower()
-		    logger.debug(f"Slide text: {slide_text}")
-		if slide_text and transcription:
-			lcs_length, lcs_result = lcs_1gram(slide_text.split(), transcription.split(), 3)
-			rouge_1gram = len(" ".join(lcs_result)) / len(slide_text)
-			lcs_length, lcs_result = lcs(slide_text, transcription)
-			rouge_l = lcs_length / len(slide_text)
-			rouge_score = rouge_1gram_weight * rouge_1gram + rouge_l_weight * rouge_l
-		else:
-			rouge_score = 0
-		logger.debug(f"rouge_score: {rouge_score}")
-		if rouge_score >= rouge_threshold:
-			if rouge_threshold_crossed_timestamp is None:
-				logger.info("Rouge score crosses threshold.")
-				rouge_threshold_crossed_timestamp = time.time()
-			else:
-				time_passed = (
-					time.time() - rouge_threshold_crossed_timestamp
-				)
-				if time_passed >= transition_back_delay:
-					switch_to_cam()
-					time.sleep(onchange_delay_dur)
+    curr_program = ws.call(requests.GetCurrentProgramScene()).getSceneName()
+    if curr_program not in PPT_scenenames:
+        rouge_threshold_crossed_timestamp = None
+        recorder.stop()
+        transcriber.stop()
+        slide_text = ""
+        transcription = ""
+        clear_queue(recording_queue)
+        clear_queue(transcription_queue)
+    else:
+        recorder.start()
+        transcriber.start()
+        while not transcription_queue.empty():
+            if transcription.endswith("..."):
+                transcription = transcription[:-3]
+            transcription += " " + transcription_queue.get().lower()
+            logger.debug(f"Transcription: {transcription}")
+        if not slide_text:
+            ocr_result = reader.readtext(img)
+            slide_text = " ".join([elem[1] for elem in ocr_result]).lower()
+            logger.debug(f"Slide text: {slide_text}")
+        if slide_text and transcription:
+            lcs_length, lcs_result = lcs_1gram(
+                slide_text.split(), transcription.split(), 3)
+            rouge_1gram = len(" ".join(lcs_result)) / len(slide_text)
+            lcs_length, lcs_result = lcs(slide_text, transcription)
+            rouge_l = lcs_length / len(slide_text)
+            rouge_score = rouge_1gram_weight * rouge_1gram + rouge_l_weight * rouge_l
+        else:
+            rouge_score = 0
+        logger.debug(f"rouge_score: {rouge_score}")
+        if rouge_score >= rouge_threshold:
+            if rouge_threshold_crossed_timestamp is None:
+                logger.info("Rouge score crosses threshold.")
+                rouge_threshold_crossed_timestamp = time.time()
+            else:
+                time_passed = (
+                    time.time() - rouge_threshold_crossed_timestamp
+                )
+                if time_passed >= transition_back_delay:
+                    switch_to_cam()
+                    time.sleep(onchange_delay_dur)
 
-
-	time.sleep(delay_dur)
+    time.sleep(delay_dur)
 
 
 ws.disconnect()

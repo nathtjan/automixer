@@ -34,7 +34,7 @@ class LocalTranscriber:
                 chunk = self.recording_queue.get()
                 chunk_np = np.array(chunk).astype(np.float32)
                 abs_mean_chunk = np.abs(chunk_np).mean()
-                if abs_mean_chunk <  1e-3:
+                if abs_mean_chunk < 1e-3:
                     logging.debug("Empty chunk skipped")
                     continue
                 audio_chunk.extend(chunk)
@@ -49,19 +49,18 @@ class LocalTranscriber:
             # Skip empty audio
             abs_mean_audio = np.abs(audio_np).mean()
             logging.debug(f"abs_mean_audio: {abs_mean_audio}")
-            if abs_mean_audio <  1e-3:
+            if abs_mean_audio < 1e-3:
                 logging.debug("Empty audio skipped")
                 continue
 
             # Clean audio (replace NaN with 0)
-            audio_np[audio_np!=audio_np] = 0
+            audio_np[audio_np != audio_np] = 0
 
             # Run Whisper transcription
             logging.debug("Transcribing...")
             result = self.model.transcribe(audio_np, language="id", fp16=False)
             result = result['text'].strip()
             self.transcription_queue.put(result)
-            
 
     def is_alive(self):
         return (self._thread is not None) and self._thread.is_alive()
@@ -125,11 +124,11 @@ class OpenAITranscriber:
             audio_np = np.array(audio_chunk).astype(np.float32)
 
             # Clean audio (replace NaN with 0)
-            audio_np[audio_np!=audio_np] = 0
+            audio_np[audio_np != audio_np] = 0
 
             # Run Whisper transcription
             logging.debug("Transcribing...")
-            
+
             try:
                 wav_buffer = numpy_to_wav_buffer(16000, audio_np)
                 response = self.client.audio.transcriptions.create(
@@ -142,7 +141,6 @@ class OpenAITranscriber:
             except Exception as e:
                 logging.error(f"Error during transcription: {str(e)}")
                 continue
-            
 
     def is_alive(self):
         return (self._thread is not None) and self._thread.is_alive()
