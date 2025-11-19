@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class MixerClient(ABC):
+class AbstractInteractor(ABC):
     """Abstract base for mixer controllers (OBS, vMix, etc.)."""
 
     @abstractmethod
@@ -19,3 +19,10 @@ class MixerClient(ABC):
     @abstractmethod
     def get_current_program_scene(self) -> str:
         raise NotImplementedError
+
+    @abstractmethod
+    def get_current_preview_scene(self) -> str:
+        raise NotImplementedError
+
+
+__all__ = ["AbstractInteractor"]

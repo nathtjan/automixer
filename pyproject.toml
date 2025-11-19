@@ -1,0 +1,19 @@
+[project]
+name = "automixer"
+version = "0.1.0"
+description = "Video mixer automation for Reformed Exodus Community streamings"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Nathanael Tjandra", email = "nath.tjand@gmail.com" },
+]
+dependencies = [
+  "bubus",
+  "easyocr",
+  "numpy",
+  "openai",
+  "opencv-python",
+  "pydantic",
+  "scipy",
+  "sounddevice",
+]
