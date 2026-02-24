@@ -1,0 +1,57 @@
+{
+    "service_collection":{
+        "camera": {
+            "camera": {
+                "index": 2
+            }
+        },
+        "interaction": {
+            "interactor": {
+                "software": "obs",
+                "host": "localhost",
+                "port": "4455"
+            },
+            "slide_scenenames": [
+                "FULL PPT",
+                "PPT PIP 1",
+                "PPT PIP 2"
+            ],
+            "default_slide_scenename": "FULL PPT",
+            "cam_scenename": "CAMERA",
+            "program_check_delay": 0.1
+        },
+        "mic": {
+            "input_stream": {
+                "device": 1,
+                "channels": 1,
+                "samplerate": 16000
+            },
+            "read_frames": 32000
+        },
+        "mixing": {
+            "rouge_1gram_weight": 0.9,
+            "rouge_l_weight": 0.1,
+            "slide2cam_threshold": 0.8,
+            "slide2cam_delay": 1
+        },
+        "ocr": {
+            "reader": {
+                "lang_list": ["id", "en"]
+            }
+        },
+        "slide": {
+            "diff_threshold": 5,
+            "edge_threshold": 20,
+            "full_black_threshold_mean": 36,
+            "full_black_threshold_std": 5
+        },
+        "transcription": {
+            "transcriber": {
+                "client": {},
+                "model": "gpt-4o-transcribe",
+                "language": "id"
+            },
+            "run_delay": 0.1
+        }
+    }
+}

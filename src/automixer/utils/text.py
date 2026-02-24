@@ -57,6 +57,8 @@ def lcs_1gram(seq1, seq2, tolerance=0):
     def equal_with_tolerance(a, b):
         if abs(len(a) - len(b)) > tolerance:
             return False
+        if tolerance == 0:
+            return a == b
         return levenshtein_distance(a, b) <= tolerance
 
     # Fill DP table
@@ -83,23 +85,8 @@ def lcs_1gram(seq1, seq2, tolerance=0):
     return dp[m][n], lcs[::-1]
 
 
-# === EXAMPLE USAGE ===
-if __name__ == "__main__":
-    s1 = "the quick brown fox jumps".split()
-    s2 = "the kwik brwn focks jumpd".split()
-
-    print("Input 1:", s1)
-    print("Input 2:", s2)
-
-    # Standard LCS
-    len_std, lcs_std = lcs(s1, s2)
-    print("\nStandard LCS:")
-    print("Length:", len_std)
-    print("LCS:", lcs_std)
-
-    # 1-gram LCS with tolerance
-    tolerance = 2
-    len_tol, lcs_tol = lcs_1gram(s1, s2, tolerance=tolerance)
-    print(f"\n1-gram LCS with tolerance = {tolerance}:")
-    print("Length:", len_tol)
-    print("LCS:", lcs_tol)
+__all__ = [
+    "levenshtein_distance",
+    "lcs",
+    "lcs_1gram",
+]
