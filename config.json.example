@@ -37,7 +37,7 @@
         },
         "ocr": {
             "reader": {
-                "lang_list": ["id", "en"]
+                "lang_list": ["en"]
             },
             "expect_frame_timeout": 5.0
         },
@@ -51,7 +51,7 @@
             "transcriber": {
                 "client": {},
                 "model": "gpt-4o-transcribe",
-                "language": "id"
+                "language": "en"
             },
             "run_delay": 0.1
         }

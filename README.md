@@ -1,0 +1,211 @@
+# Automixer
+Multimedia automation for video mixing sermon/presentation (switching between camera and slide).
+
+## How does it work? (overview)
+### Camera to slide
+Automixer decides to set program to **slide** whenever a slide change is detected.
+
+Multiple slide scene is supported. If the current preview is a slide scene, it will be set as program. Else, automixer will set the default slide scene as program.
+
+### Slide to camera
+Automixer decide to set program to camera when the current slide text (extracted with OCR) was read (using AI-based transcription) to a certain threshold.
+
+The comparison is done by thresholding weighted summation of ROUGE-1 and ROUGE-L.
+
+
+## Support
+### Switcher Software
+- OBS
+### Transcriber
+- OpenAI
+
+## Requirements
+- Python >= 3.11
+- OpenAI API Key (with transcription permission)
+- Virtual audio cable (VAC)
+
+## Install
+> [!TIP]
+> It is recommended to use virtual environment.
+
+1. Firstly, [**install Torch**](https://pytorch.org/get-started/locally/) according to your device setup.
+
+2. Then, **clone and install this repo** (including extra for OBS)
+    ```bash
+    git clone https://github.com/nathtjan/automixer.git
+    cd automixer
+    pip install .[obs]
+    ```
+
+3. **Copy environment file**
+    ```bash
+    cp .env.example .env
+    ```
+
+4. **Edit `.env` file** (see [Environment Variables Reference](#environment-variables-reference))
+
+5. **Copy configuration file**
+    ```bash
+    cp config.json.example config.json
+    ```
+
+6. **Edit configuration file** (see [Configuration Reference](#configuration-reference))
+
+## Setup
+### OBS
+1. Set virtual camera to output your slide.
+2. Set audio monitor device to be sent to virtual audio cable, and ensure (preferably only) the speaker audio get sent to monitor device.
+
+## Run
+Run automixer from terminal.
+
+### Run from script
+```bash
+automixer
+```
+Automixer automatically install `automixer` script upon installation.
+
+### Run as package
+```bash
+python -m automixer
+```
+
+### Config file
+Automixer by default uses config.json in current working directory. You can change the config file used by specifying the config file path using `--config` flag:
+```bash
+automixer --config ./another-config.json
+```
+
+### TUI vs Headless
+Automixer by default provides Terminal User Interface (built with Textual) for live state update and logs. In TUI mode:
+- Press `p` to pause/resume processing.
+- Press `q` to quit.
+
+You can disable the TUI by running in headless mode using `--headless` flag:
+```bash
+automixer --headless
+```
+
+### Verbose mode
+Run Automixer in verbose mode to outputs debug log using `-v` or `--verbose` flag.
+```bash
+automixer -v
+```
+
+## Environment Variables Reference
+- `OPENAI_API_KEY` (required): used by the OpenAI client for authentication.
+- `OBS_PASSWORD` (optional): OBS WebSocket password (used when not provided in config).
+
+
+## Configuration Reference
+
+### Camera Service
+
+#### `service_collection.camera.camera.index`: `int`
+Index of the OBS virtual camera
+
+#### `service_collection.camera.read_delay`: `float`
+Delay between each frame capture
+
+---
+
+### Interaction Service
+
+#### `service_collection.interaction.interactor.software`: `str`
+Name of switcher software used in lowercase (currently only support `'obs'`)
+
+#### `service_collection.interaction.interactor.host`: `str`
+IP address of OBS Websocket Server
+
+#### `service_collection.interaction.interactor.port`: `str`
+Port of OBS Websocket Server
+
+#### `service_collection.interaction.slide_scenenames`: `list[str]`
+Name of scenes that is considered as showing presentation.
+
+#### `service_collection.interaction.default_slide_scenename`: `str`
+Name of a scene that is considered as default scene showing presentation. This is used when preview scene is not a presentation scene. Make sure this scene name exists in `service_collection.interaction.slide_scenenames`.
+
+#### `service_collection.interaction.cam_scenename`: `str`
+Name of a scene that is considered as showing camera (speaker).
+
+#### `service_collection.interaction.program_check_delay`: `float`
+Delay between each program check (program name request).
+
+---
+
+### Mic Service
+
+#### `service_collection.mic.input_stream.device`: `int`
+Device index used as mic. Normally, this will be the index of VAC output.
+
+#### `service_collection.mic.input_stream.channels`: `int`
+VAC output's number of channels. If multiple, will be converted to mono.
+
+#### `service_collection.mic.input_stream.samplerate`: `int`
+Sampling rate of the VAC output. Set to `16000` to prevent resampling when transcribing.
+
+#### `service_collection.mic.read_frames`: `int`
+The number of audio frames read for each audio segment. For example, if the sampling rate is set to `16000` and you want to set each audio segments to be 2 seconds long, set this value to `32000`. Consider the latency-accuracy tradeoff when changing this value.
+
+---
+
+### Mixing Service
+
+#### `service_collection.mixing.rouge_1gram_weight`: `float`
+Weight of ROUGE-1. This is used for calculating `slide2camscore`: a score that is being thresholded to decide changing program to camera scene when currently showing slide scene.
+
+#### `service_collection.mixing.rouge_l_weight`: `float`
+Weight of ROUGE-L. This is also used for calculating `slide2camscore`
+
+#### `service_collection.mixing.slide2cam_threshold`: `float`
+Threshold value of `slide2camscore`.
+
+#### `service_collection.mixing.slide2cam_delay`: `int`
+Delay between the time the slide2cam decision is made and it being acted upon. If a slide change is detected during this delay period, the slide2cam decision will be overriden/cancelled.
+
+---
+
+### OCR Service
+
+#### `service_collection.ocr.reader`: `dict`
+Kwargs used to initialize EasyOCR Reader.
+
+#### `service_collection.ocr.expect_frame_timeout`: `float`
+Maximum duration between program change happening and a valid camera frame is received to be OCR-ed.
+
+---
+
+### Slide Service
+
+#### `service_collection.slide.diff_threshold`: `int`
+Threshold to detect slide difference.
+
+#### `service_collection.slide.edge_threshold`: `int`
+Threshold used when determining if a pixel is semantically an edge. This is done for ignoring noises around semantic edges. If you do not need this, set this value as high as possible to disable it.
+
+#### `service_collection.slide.full_black_threshold_mean`: `int`
+Threshold of mean used when determining a frame is full black.
+
+#### `service_collection.slide.full_black_threshold_std`: `int`
+Threshold of standard deviation used when determining a frame is full black.
+
+---
+
+### Transcription Service
+
+#### `service_collection.transcription.transcriber.client`: `dict`
+Kwargs used to initialized OpenAI client.
+
+#### `service_collection.transcription.transcriber.model`: `str`
+OpenAI model used for transcription
+
+#### `service_collection.transcription.transcriber.language`: `str`
+Language that may appear in the audio being transcribed.
+
+#### `service_collection.transcription.run_delay`: `float`
+Additional delay between each transcription process.
+
+
+## License
+Automixer is licensed under GNU GPLv3 (see [LICENSE](LICENSE))
