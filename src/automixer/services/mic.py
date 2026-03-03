@@ -19,16 +19,19 @@ class MicService(ThreadService):
         self.input_stream = input_stream
         self.read_frames = read_frames
         self._audio_queue = Queue()
+    
+    async def down(self):
+        await super().down()
+        self.input_stream.close()
 
     def run(self):
-        with self.input_stream as stream:
-            self.input_stream.start()
-            while not self.should_stop():
-                segment, overflowed = stream.read(self.read_frames)
-                if overflowed:
-                    raise RuntimeError("Audio input overflowed")
-                self._audio_queue.put(segment.copy())
-            self.input_stream.stop()
+        self.input_stream.start()
+        while not self.should_stop():
+            segment, overflowed = self.input_stream.read(self.read_frames)
+            if overflowed:
+                raise RuntimeError("Audio input overflowed")
+            self._audio_queue.put(segment.copy())
+        self.input_stream.stop()
 
     async def step(self):
         while not self._audio_queue.empty():
