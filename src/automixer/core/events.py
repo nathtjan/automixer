@@ -17,6 +17,10 @@ class CameraFrameEvent(BaseEvent):
     frame: Any
 
 
+class ValidCameraFrameEvent(CameraFrameEvent):
+    pass
+
+
 class SlideChangeEvent(BaseEvent):
     slide: Any
     previous_slide: Any
@@ -45,6 +49,14 @@ class ProgramChangeEvent(BaseEvent):
     scene_name: str
 
 
+class Slide2CamScoreEvent(BaseEvent):
+    score: float
+
+
+class TranscriptionStateEvent(BaseEvent):
+    text: str
+
+
 __all__ = [
     "BaseEvent",
     "SceneType",
@@ -55,4 +67,6 @@ __all__ = [
     "TranscriptionEvent",
     "MixingResultEvent",
     "ProgramChangeEvent",
+    "Slide2CamScoreEvent",
+    "TranscriptionStateEvent",
 ]

@@ -3,10 +3,12 @@ from logging import getLogger
 from automixer.core.events import (
     MixingResultEvent,
     SceneType,
+    Slide2CamScoreEvent,
     SlideChangeEvent,
     SlideOCREvent,
     ProgramChangeEvent,
-    TranscriptionEvent
+    TranscriptionEvent,
+    TranscriptionStateEvent
 )
 from automixer.services.base import BaseService, autoregister
 from automixer.utils.text import lcs, lcs_1gram
@@ -33,6 +35,7 @@ class MixingService(BaseService):
         self.slide2cam_threshold = slide2cam_threshold
         self.slide2cam_delay = slide2cam_delay
         self._threshold_crossed_at = None
+        self._last_score = 0.0
 
     @autoregister
     def on_slide_change(self, event: SlideChangeEvent):
@@ -44,6 +47,7 @@ class MixingService(BaseService):
         slide_text = " ".join([elem[1] for elem in ocr_result]).lower()
         self.slide_text = slide_text
         logger.debug(f"Updated slide text: {self.slide_text}")
+        self.update_slide2cam_score()
 
     @autoregister
     def on_transcription(self, event: TranscriptionEvent):
@@ -51,10 +55,12 @@ class MixingService(BaseService):
         if self.transcription is None:
             self.transcription = text.lower()
             logger.debug(f"Initialized transcription: {self.transcription}")
-            return
-        self.transcription = self.transcription.rstrip("...")
-        self.transcription += " " + text.lower()
-        logger.debug(f"Updated transcription: {self.transcription}")
+        else:
+            self.transcription = self.transcription.rstrip("...")
+            self.transcription += " " + text.lower()
+            logger.debug(f"Updated transcription: {self.transcription}")
+        self.bus.dispatch(TranscriptionStateEvent(text=self.transcription))
+        self.update_slide2cam_score()
 
     @autoregister
     def on_program_change(self, event: ProgramChangeEvent):
@@ -81,11 +87,18 @@ class MixingService(BaseService):
         logger.debug(f"Calculated slide2cam score: {rouge_score}")
         return rouge_score
 
-    async def step(self):
-        if self.calculate_slide2cam_score() < self.slide2cam_threshold:
+    def update_slide2cam_score(self):
+        self._last_score = self.calculate_slide2cam_score()
+        self.bus.dispatch(Slide2CamScoreEvent(score=self._last_score))
+        if self._last_score < self.slide2cam_threshold:
+            self._threshold_crossed_at = None
             return
         if self._threshold_crossed_at is None:
             self._threshold_crossed_at = time.time()
+            return
+
+    async def step(self):
+        if self._threshold_crossed_at is None:
             return
         if time.time() - self._threshold_crossed_at > self.slide2cam_delay:
             self.bus.dispatch(MixingResultEvent(scene_type=SceneType.CAMERA))

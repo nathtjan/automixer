@@ -3,7 +3,8 @@
         "camera": {
             "camera": {
                 "index": 2
-            }
+            },
+            "read_delay": 1.0
         },
         "interaction": {
             "interactor": {
@@ -37,7 +38,8 @@
         "ocr": {
             "reader": {
                 "lang_list": ["id", "en"]
-            }
+            },
+            "expect_frame_timeout": 5.0
         },
         "slide": {
             "diff_threshold": 5,

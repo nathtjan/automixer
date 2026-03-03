@@ -1,0 +1,30 @@
+Screen {
+    layout: vertical;
+}
+
+Container#main {
+    layout: grid;
+    grid-size: 3 2;
+    padding: 1 2;
+    overflow: auto;
+    min-height: 60%;
+}
+
+Vertical#transcription-group {
+    column-span: 2;
+}
+
+Static.label {
+    text-style: bold;
+}
+
+Static.value {
+    border: solid $foreground;
+    padding: 0;
+    min-height: 5;
+}
+
+Collapsible {
+    max-height: 50%;
+    overflow: auto;
+}

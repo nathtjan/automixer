@@ -4,7 +4,7 @@ import importlib.resources
 import numpy as np
 import cv2
 from automixer.core.events import (
-    SlideChangeEvent, CameraFrameEvent, ProgramChangeEvent
+    SlideChangeEvent, CameraFrameEvent, ValidCameraFrameEvent
 )
 from automixer.services.base import BaseService, autoregister
 from automixer.utils.vision import sobel_edge
@@ -21,7 +21,6 @@ class SlideService(BaseService):
         edge_threshold=20,
         full_black_threshold_mean=36,
         full_black_threshold_std=5,
-        cam_frame_timeout=5.0
     ):
         super().__init__(bus)
         self.prev_frame = None
@@ -29,9 +28,8 @@ class SlideService(BaseService):
         self.edge_threshold = edge_threshold
         self.full_black_threshold_mean = full_black_threshold_mean
         self.full_black_threshold_std = full_black_threshold_std
-        self.cam_frame_timeout = cam_frame_timeout
         self.obs_vcam_default_template = cv2.imread(str(
-            importlib.resources.files("automixer.resources").joinpath("obs_vcam_default.png")
+            importlib.resources.files("automixer.resources.image").joinpath("obs_vcam_default.png")
         ))
         if self.obs_vcam_default_template is None:
             logger.warning("Failed to load OBS VCam default template image.")
@@ -85,6 +83,7 @@ class SlideService(BaseService):
 
         if not self.frame_is_valid(frame):
             return
+        self.bus.dispatch(ValidCameraFrameEvent(frame=frame))
 
         if self.prev_frame is None:
             self.prev_frame = frame
@@ -97,28 +96,6 @@ class SlideService(BaseService):
             )
             self.bus.dispatch(new_event)
 
-        self.prev_frame = frame
-
-    @autoregister
-    async def on_program_change(self, event: ProgramChangeEvent):
-        """Assumes slide change"""
-
-        try:
-            cam_frame_event = await self.bus.expect(
-                CameraFrameEvent,
-                include=lambda e: self.frame_is_valid(e.frame),
-                timeout=self.cam_frame_timeout
-            )
-            frame = cam_frame_event.frame
-        except asyncio.TimeoutError:
-            logger.warning("Failed to get a valid camera frame after program change.")
-            return
-
-        new_event = SlideChangeEvent(
-            slide=frame,
-            previous_slide=self.prev_frame
-        )
-        self.bus.dispatch(new_event)
         self.prev_frame = frame
 
 

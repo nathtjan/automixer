@@ -106,6 +106,7 @@ class MixingServiceConfig(BaseServiceConfig):
 
 class OCRServiceConfig(BaseServiceConfig):
     reader: OCRReaderConfig
+    expect_frame_timeout: float = 5.0
     _class: ClassVar[type] = services.OCRService
 
 
