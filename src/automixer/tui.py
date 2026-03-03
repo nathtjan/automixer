@@ -20,6 +20,7 @@ from automixer.core.events import (
     SlideOCREvent,
     TranscriptionStateEvent,
 )
+from automixer.mixer import Automixer
 from automixer.services.base import BaseService, autoregister
 from automixer.core.bus import EventBus
 
@@ -106,17 +107,22 @@ class LogQueueHandler(logging.Handler):
 class AutomixerApp(App):
     TITLE = "Automixer"
     CSS_PATH = importlib.resources.files("automixer.resources.tcss").joinpath("automixer.tcss")
-    BINDINGS = [Binding("q", "quit", "Quit", show=True)]
+    BINDINGS = [
+        Binding("p", "toggle_pause", "Pause/Resume", show=True),
+        Binding("q", "quit", "Quit", show=True),
+    ]
 
     def __init__(
         self,
         state_queue: asyncio.Queue[UIState],
         log_queue: asyncio.Queue[str],
+        automixer: Automixer,
         on_exit: Optional[Callable[[], None]] = None,
     ):
         super().__init__()
         self.state_queue = state_queue
         self.log_queue = log_queue
+        self.automixer = automixer
         self.on_exit = on_exit
         self._state_task: Optional[asyncio.Task] = None
         self._log_task: Optional[asyncio.Task] = None
@@ -195,8 +201,12 @@ class AutomixerApp(App):
         slide_label.update(state.slide_text or "-")
         transcription_label.update(state.transcription or "-")
 
+    def action_toggle_pause(self) -> None:
+        """Toggle the automixer pause state."""
+        self.automixer.toggle_pause()
 
-async def create_ui(bus: EventBus) -> tuple[AutomixerApp, LogQueueHandler, UIStateService]:
+
+async def create_ui(bus: EventBus, automixer: Automixer) -> tuple[AutomixerApp, LogQueueHandler, UIStateService]:
     state_queue: asyncio.Queue[UIState] = asyncio.Queue(maxsize=100)
     log_queue: asyncio.Queue[str] = asyncio.Queue(maxsize=200)
 
@@ -208,5 +218,5 @@ async def create_ui(bus: EventBus) -> tuple[AutomixerApp, LogQueueHandler, UISta
     formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s", "%H:%M:%S")
     handler.setFormatter(formatter)
 
-    app = AutomixerApp(state_queue=state_queue, log_queue=log_queue)
+    app = AutomixerApp(state_queue=state_queue, log_queue=log_queue, automixer=automixer)
     return app, handler, state_service

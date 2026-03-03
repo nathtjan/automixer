@@ -68,6 +68,8 @@ class InteractionService(ThreadService):
         self._program_change_queue.put(prev_program)
 
         while not self.should_stop():
+            if self.should_pause():
+                continue
             program = self._interactor.get_current_program_scene()
             if program != prev_program:
                 logger.info("Detected program scene change to " + program)

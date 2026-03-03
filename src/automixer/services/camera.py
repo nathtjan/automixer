@@ -23,6 +23,8 @@ class CameraService(ThreadService):
 
     def run(self):
         while not self.should_stop():
+            if self.should_pause():
+                continue
             ret, frame = self.camera.read()
             if not ret:
                 logger.warning("Failed to read frame from camera.")

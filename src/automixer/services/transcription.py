@@ -47,6 +47,8 @@ class TranscriptionService(ThreadService):
 
     def run(self):
         while not self.should_stop():
+            if self.should_pause():
+                continue
             if not self._audio_queue.empty():
                 event = self.process_audio_event(self._audio_queue.get())
                 if event:

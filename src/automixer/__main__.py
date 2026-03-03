@@ -35,7 +35,7 @@ async def run_with_tui(config_path: str):
 
     automixer, bus = build_automixer(config_path)
 
-    app, log_handler, _state_service = await create_ui(bus)
+    app, log_handler, _state_service = await create_ui(bus, automixer)
 
     root_logger = logging.getLogger()
     root_logger.addHandler(log_handler)

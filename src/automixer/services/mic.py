@@ -27,6 +27,8 @@ class MicService(ThreadService):
     def run(self):
         self.input_stream.start()
         while not self.should_stop():
+            if self.should_pause():
+                continue
             segment, overflowed = self.input_stream.read(self.read_frames)
             if overflowed:
                 raise RuntimeError("Audio input overflowed")

@@ -48,5 +48,13 @@ class ServiceCollection:
     async def down(self):
         await asyncio.gather(*[service.down() for service in self.services])
 
+    def pause(self):
+        for service in self.services:
+            service.pause()
+
+    def resume(self):
+        for service in self.services:
+            service.resume()
+
 
 __all__ = ["ServiceCollection"]

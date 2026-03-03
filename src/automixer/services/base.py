@@ -96,6 +96,12 @@ class BaseService():
         """Stop the service. Override in subclasses if needed."""
         pass
 
+    def pause(self):
+        pass
+
+    def resume(self):
+        pass
+
 
 class ThreadService(BaseService):
     SERVICE_NAME = None
@@ -103,6 +109,7 @@ class ThreadService(BaseService):
     def __init__(self, bus: EventBus):
         super().__init__(bus)
         self._should_stop = False
+        self._should_pause = False
         self._thread = None
         if self.SERVICE_NAME is None:
             self.service_name = self.__class__.__name__
@@ -111,6 +118,9 @@ class ThreadService(BaseService):
 
     def should_stop(self) -> bool:
         return self._should_stop
+
+    def should_pause(self) -> bool:
+        return self._should_pause
 
     def run(self):
         raise NotImplementedError(
@@ -137,6 +147,12 @@ class ThreadService(BaseService):
 
     async def down(self):
         self.stop()
+
+    def pause(self):
+        self._should_pause = True
+
+    def resume(self):
+        self._should_pause = False
 
 
 __all__ = [

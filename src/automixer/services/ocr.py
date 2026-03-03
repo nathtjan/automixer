@@ -30,6 +30,8 @@ class OCRService(ThreadService):
 
     def run(self):
         while not self.should_stop():
+            if self.should_pause():
+                continue
             if self._pending_frame_queue.empty():
                 continue
             frame = self._pending_frame_queue.get()
