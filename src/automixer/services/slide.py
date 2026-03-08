@@ -29,7 +29,7 @@ class SlideService(BaseService):
         self.full_black_threshold_mean = full_black_threshold_mean
         self.full_black_threshold_std = full_black_threshold_std
         self.obs_vcam_default_template = cv2.imread(str(
-            importlib.resources.files("automixer.resources.image").joinpath("obs_vcam_default.png")
+            importlib.resources.files("automixer").joinpath("resources", "image", "obs_vcam_default.png")
         ))
         if self.obs_vcam_default_template is None:
             logger.warning("Failed to load OBS VCam default template image.")

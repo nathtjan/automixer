@@ -1,5 +1,5 @@
 import asyncio
-import importlib
+import importlib.resources
 import logging
 import time
 from dataclasses import dataclass, replace
@@ -106,7 +106,7 @@ class LogQueueHandler(logging.Handler):
 
 class AutomixerApp(App):
     TITLE = "Automixer"
-    CSS_PATH = importlib.resources.files("automixer.resources.tcss").joinpath("automixer.tcss")
+    CSS_PATH = importlib.resources.files("automixer").joinpath("resources", "tcss", "automixer.tcss")
     BINDINGS = [
         Binding("p", "toggle_pause", "Pause/Resume", show=True),
         Binding("q", "quit", "Quit", show=True),
