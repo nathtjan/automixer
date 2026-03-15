@@ -70,6 +70,15 @@ class OpenAITranscriberConfig(InstantiableClassConfig):
     language: Optional[str] = None
     _class: ClassVar[type] = OpenAITranscriber
 
+    @classmethod
+    def filter_kwargs(cls, kwargs: dict) -> dict:
+        # Allow language param
+        return {
+            "client": kwargs["client"].instantiate(),
+            "model": kwargs["model"],
+            "language": kwargs.get("language"),
+        }
+
 
 class BaseServiceConfig(InstantiableClassConfig):
     pass  # For future common attributes
