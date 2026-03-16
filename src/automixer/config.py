@@ -54,6 +54,13 @@ class OBSInteractorConfig(InstantiableClassConfig):
     password: Optional[SecretStr] = None
     _class: ClassVar[type] = interactors.OBSInteractor
 
+    @classmethod
+    def instantiate(cls, *args, **kwargs) -> object:
+        # Override to handle SecretStr for password
+        if "password" in kwargs and isinstance(kwargs["password"], SecretStr):
+            kwargs["password"] = kwargs["password"].get_secret_value()
+        return cls.get_class()(*args, **kwargs)
+
 
 class OCRReaderConfig(InstantiableClassConfig):
     lang_list: List[str]
