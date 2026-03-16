@@ -61,7 +61,16 @@ class InteractionService(ThreadService):
             raise ValueError("Unknown scene type: " + str(event.scene_type))
 
     def run(self):
-        prev_program = self._interactor.get_current_program_scene()
+        prev_program = None
+        while prev_program is None and not self.should_stop():
+            if self.should_pause():
+                continue
+            try:
+                prev_program = self._interactor.get_current_program_scene()
+            except Exception as e:
+                logger.error(f"Failed to get initial program scene: {e}. "
+                             f"Retrying in {self._program_check_delay} seconds...")
+                time.sleep(self._program_check_delay)
 
         # Put the initial program scene in the queue
         # to ensure the system starts with a known state
@@ -70,7 +79,13 @@ class InteractionService(ThreadService):
         while not self.should_stop():
             if self.should_pause():
                 continue
-            program = self._interactor.get_current_program_scene()
+            try:
+                program = self._interactor.get_current_program_scene()
+            except Exception as e:
+                logger.error(f"Failed to get current program scene: {e}. "
+                             f"Retrying in {self._program_check_delay} seconds...")
+                time.sleep(self._program_check_delay)
+                continue
             if program != prev_program:
                 logger.info("Detected program scene change to " + program)
                 self._program_change_queue.put(program)

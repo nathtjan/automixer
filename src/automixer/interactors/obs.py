@@ -30,6 +30,8 @@ class OBSInteractor(AbstractInteractor):
             raise RuntimeError(
                 "obs-websocket-py not installed or failed to import")
 
+        if self._ws is not None:
+            return  # Already connected
         try:
             ws = obsws(self._host, self._port, self._password)
             ws.connect()
