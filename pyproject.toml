@@ -15,6 +15,7 @@ dependencies = [
   "opencv-python",
   "pydantic",
   "python-dotenv",
+  "pyyaml",
   "scipy",
   "sounddevice",
   "textual",

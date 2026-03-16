@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import json
 import logging
 from typing import Tuple
 
@@ -10,15 +9,15 @@ from automixer import EventBus
 from automixer.builder import build_from_config
 from automixer.config import AutomixerConfig
 from automixer.mixer import Automixer
+from automixer.utils.file import load_yaml
 
 
 def build_automixer(config_path: str) -> Tuple[Automixer, EventBus]:
     """Load configuration and build an Automixer instance with its bus."""
-    with open(config_path, "r") as f:
-        config = json.load(f)
+    config = load_yaml(config_path)
 
     bus = EventBus(name="MainBus")
-    automixer_config = AutomixerConfig.model_validate(config)
+    automixer_config = AutomixerConfig.model_validate(config["mixer"])
     automixer = build_from_config(automixer_config, bus=bus)
     if not isinstance(automixer, Automixer):
         raise TypeError("The built object is not an instance of Automixer")
@@ -82,7 +81,7 @@ def configure_logging(level: int, to_console: bool):
 
 def main():
     parser = argparse.ArgumentParser(description="Automixer Command Line Interface")
-    parser.add_argument("-c", "--config", type=str, default="./config.json", help="Path to the configuration file")
+    parser.add_argument("-c", "--config", type=str, default="./config.yaml", help="Path to the YAML configuration file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument("--headless", action="store_true", help="Run without Textual terminal UI")
     args = parser.parse_args()

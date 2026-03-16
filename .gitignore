@@ -219,4 +219,4 @@ __marimo__/
 logs
 
 # Configuration files
-config.json
+config.yaml

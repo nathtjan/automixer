@@ -1,4 +1,4 @@
-from typing import List, Optional, ClassVar, Literal, Union
+from typing import List, Optional, ClassVar, Literal, Union, Annotated
 import inspect
 
 import cv2
@@ -92,12 +92,14 @@ class BaseServiceConfig(InstantiableClassConfig):
 
 
 class CameraServiceConfig(BaseServiceConfig):
+    service_type: Literal["camera"] = "camera"
     camera: CameraConfig
     read_delay: Optional[float] = 0.1
     _class: ClassVar[type] = services.CameraService
 
 
 class InteractionServiceConfig(BaseServiceConfig):
+    service_type: Literal["interaction"] = "interaction"
     interactor: Union[OBSInteractorConfig] = Field(discriminator='software')  # Can be extended to support other interactors in the future
     slide_scenenames: List[str]
     default_slide_scenename: str
@@ -107,12 +109,14 @@ class InteractionServiceConfig(BaseServiceConfig):
 
 
 class MicServiceConfig(BaseServiceConfig):
+    service_type: Literal["mic"] = "mic"
     input_stream: MicConfig
     read_frames: int
     _class: ClassVar[type] = services.MicService
 
 
 class MixingServiceConfig(BaseServiceConfig):
+    service_type: Literal["mixing"] = "mixing"
     rouge_1gram_weight: float
     rouge_l_weight: float
     slide2cam_threshold: float
@@ -121,12 +125,14 @@ class MixingServiceConfig(BaseServiceConfig):
 
 
 class OCRServiceConfig(BaseServiceConfig):
+    service_type: Literal["ocr"] = "ocr"
     reader: OCRReaderConfig
     expect_frame_timeout: float = 5.0
     _class: ClassVar[type] = services.OCRService
 
 
 class SlideServiceConfig(BaseServiceConfig):
+    service_type: Literal["slide"] = "slide"
     diff_threshold: float
     edge_threshold: float
     full_black_threshold_mean: float
@@ -135,24 +141,25 @@ class SlideServiceConfig(BaseServiceConfig):
 
 
 class TranscriptionServiceConfig(BaseServiceConfig):
+    service_type: Literal["transcription"] = "transcription"
     transcriber: OpenAITranscriberConfig
     run_delay: float = 0.1
     _class: ClassVar[type] = services.TranscriptionService
 
 
-class ServiceCollectionConfig(InstantiableClassConfig):
-    camera: CameraServiceConfig
-    interaction: InteractionServiceConfig
-    mic: MicServiceConfig
-    mixing: MixingServiceConfig
-    ocr: OCRServiceConfig
-    slide: SlideServiceConfig
-    transcription: TranscriptionServiceConfig
-    _class: ClassVar[type] = services.ServiceCollection
-
-
 class AutomixerConfig(InstantiableClassConfig):
-    service_collection: ServiceCollectionConfig
+    services: List[Annotated[
+        Union[
+            CameraServiceConfig,
+            InteractionServiceConfig,
+            MicServiceConfig,
+            MixingServiceConfig,
+            OCRServiceConfig,
+            SlideServiceConfig,
+            TranscriptionServiceConfig,
+        ],
+        Field(discriminator="service_type")
+    ]]
     _class: ClassVar[type] = Automixer
 
 
@@ -172,6 +179,6 @@ __all__ = [
     "OCRServiceConfig",
     "SlideServiceConfig",
     "TranscriptionServiceConfig",
-    "ServiceCollectionConfig",
     "AutomixerConfig",
+    "preprocess_config",
 ]

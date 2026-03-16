@@ -1,6 +1,5 @@
 from automixer.services.base import *
 from automixer.services.camera import *
-from automixer.services.collection import *
 from automixer.services.interaction import *
 from automixer.services.mic import *
 from automixer.services.mixing import *

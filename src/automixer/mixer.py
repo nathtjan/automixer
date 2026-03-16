@@ -1,6 +1,9 @@
 import logging
 import asyncio
-from automixer import services, EventBus
+from typing import List
+
+from automixer import EventBus
+from automixer.services.base import BaseService
 
 
 logger = logging.getLogger(__name__)
@@ -10,21 +13,27 @@ class Automixer:
     def __init__(
         self,
         bus: EventBus,
-        service_collection: services.ServiceCollection
+        services: List[BaseService]
     ):
+        for service in services:
+            if not isinstance(service, BaseService):
+                raise ValueError(f"All services must be instances of BaseService, got {type(service)}")
+
         self.bus = bus
-        self.service_collection = service_collection
+        self.services = services
         self._should_pause = False
 
     def pause(self):
         logger.info("Pausing Automixer...")
         self._should_pause = True
-        self.service_collection.pause()
+        for service in self.services:
+            service.pause()
 
     def resume(self):
         logger.info("Resuming Automixer...")
         self._should_pause = False
-        self.service_collection.resume()
+        for service in self.services:
+            service.resume()
 
     def toggle_pause(self):
         if self.should_pause():
@@ -38,18 +47,18 @@ class Automixer:
     async def start(self):
         logger.info("Starting Automixer...")
         self.bus._start()
-        await self.service_collection.up()
+        await asyncio.gather(*[service.up() for service in self.services])
 
     async def step(self):
         await asyncio.gather(
-            self.service_collection.step(),
+            asyncio.gather(*[service.step() for service in self.services]),
             self.bus.step()
         )
 
     async def stop(self):
         logger.info("Stopping Automixer...")
         await asyncio.gather(
-            self.service_collection.down(),
+            asyncio.gather(*[service.down() for service in self.services]),
             self.bus.stop(),
         )
 

@@ -46,7 +46,7 @@ The comparison is done by thresholding weighted summation of ROUGE-1 and ROUGE-L
 
 5. **Copy configuration file**
     ```bash
-    cp config.json.example config.json
+    cp config.yaml.example config.yaml
     ```
 
 6. **Edit configuration file** (see [Configuration Reference](#configuration-reference))
@@ -71,9 +71,9 @@ python -m automixer
 ```
 
 ### Config file
-Automixer by default uses config.json in current working directory. You can change the config file used by specifying the config file path using `--config` flag:
+Automixer by default uses `config.yaml` in current working directory. You can change the config file used by specifying the config file path using `--config` flag:
 ```bash
-automixer --config ./another-config.json
+automixer --config ./another-config.yaml
 ```
 
 ### TUI vs Headless
@@ -99,111 +99,122 @@ automixer -v
 
 ## Configuration Reference
 
-### Camera Service
+> [!IMPORTANT]
+> While this documentation uses dot notation for nested structures, the configuration file should always uses traditional YAML nested format.
 
-#### `service_collection.camera.camera.index`: `int`
+Configuration file starts with the `version` of it. Look at `config.yaml.example` for current version number.
+
+> [!TIP]
+> Automixer support environment variable substitution in the config file using Docker Compose file syntax (e.g. `${OBS_PASSWORD}`).
+
+### Mixer Services
+`mixer.services` is a list of service configurations, which type is determined by the field `service_type`.
+
+#### Camera Service (`camera`)
+
+* `camera.index` (`int`):
 Index of the OBS virtual camera
 
-#### `service_collection.camera.read_delay`: `float`
+* `read_delay` (`float`):
 Delay between each frame capture
 
 ---
 
-### Interaction Service
+#### Interaction Service (`interaction`)
 
-#### `service_collection.interaction.interactor.software`: `str`
+* `interactor.software` (`str`):
 Name of switcher software used in lowercase (currently only support `'obs'`)
 
-#### `service_collection.interaction.interactor.host`: `str`
+* `interactor.host` (`str`):
 IP address of OBS Websocket Server
 
-#### `service_collection.interaction.interactor.port`: `str`
+* `interactor.port` (`str`):
 Port of OBS Websocket Server
 
-#### `service_collection.interaction.slide_scenenames`: `list[str]`
+* `slide_scenenames` (`list[str]`):
 Name of scenes that is considered as showing presentation.
 
-#### `service_collection.interaction.default_slide_scenename`: `str`
-Name of a scene that is considered as default scene showing presentation. This is used when preview scene is not a presentation scene. Make sure this scene name exists in `service_collection.interaction.slide_scenenames`.
+* `default_slide_scenename` (`str`):
+Name of a scene that is considered as default scene showing presentation. This is used when preview scene is not a presentation scene. Make sure this scene name exists in `slide_scenenames`.
 
-#### `service_collection.interaction.cam_scenename`: `str`
+* `cam_scenename` (`str`):
 Name of a scene that is considered as showing camera (speaker).
 
-#### `service_collection.interaction.program_check_delay`: `float`
+* `program_check_delay` (`float`):
 Delay between each program check (program name request).
 
 ---
 
-### Mic Service
+#### Mic Service (`mic`)
 
-#### `service_collection.mic.input_stream.device`: `int`
+* `input_stream.device` (`int`):
 Device index used as mic. Normally, this will be the index of VAC output.
 
-#### `service_collection.mic.input_stream.channels`: `int`
+* `input_stream.channels` (`int`):
 VAC output's number of channels. If multiple, will be converted to mono.
 
-#### `service_collection.mic.input_stream.samplerate`: `int`
+* `input_stream.samplerate` (`int`):
 Sampling rate of the VAC output. Set to `16000` to prevent resampling when transcribing.
 
-#### `service_collection.mic.read_frames`: `int`
+* `read_frames` (`int`):
 The number of audio frames read for each audio segment. For example, if the sampling rate is set to `16000` and you want to set each audio segments to be 2 seconds long, set this value to `32000`. Consider the latency-accuracy tradeoff when changing this value.
 
 ---
 
-### Mixing Service
+#### Mixing Service (`mixing`)
 
-#### `service_collection.mixing.rouge_1gram_weight`: `float`
+* `rouge_1gram_weight` (`float`):
 Weight of ROUGE-1. This is used for calculating `slide2camscore`: a score that is being thresholded to decide changing program to camera scene when currently showing slide scene.
 
-#### `service_collection.mixing.rouge_l_weight`: `float`
+* `rouge_l_weight` (`float`):
 Weight of ROUGE-L. This is also used for calculating `slide2camscore`
 
-#### `service_collection.mixing.slide2cam_threshold`: `float`
+* `slide2cam_threshold` (`float`):
 Threshold value of `slide2camscore`.
 
-#### `service_collection.mixing.slide2cam_delay`: `int`
+* `slide2cam_delay` (`int`):
 Delay between the time the slide2cam decision is made and it being acted upon. If a slide change is detected during this delay period, the slide2cam decision will be overriden/cancelled.
 
 ---
 
-### OCR Service
+#### OCR Service (`ocr`)
 
-#### `service_collection.ocr.reader`: `dict`
+* `reader` (`dict`):
 Kwargs used to initialize EasyOCR Reader.
 
-#### `service_collection.ocr.expect_frame_timeout`: `float`
+* `expect_frame_timeout` (`float`):
 Maximum duration between program change happening and a valid camera frame is received to be OCR-ed.
 
 ---
 
-### Slide Service
+#### Slide Service (`slide`)
 
-#### `service_collection.slide.diff_threshold`: `int`
+* `diff_threshold` (`int`):
 Threshold to detect slide difference.
 
-#### `service_collection.slide.edge_threshold`: `int`
+* `edge_threshold` (`int`):
 Threshold used when determining if a pixel is semantically an edge. This is done for ignoring noises around semantic edges. If you do not need this, set this value as high as possible to disable it.
 
-#### `service_collection.slide.full_black_threshold_mean`: `int`
+* `full_black_threshold_mean` (`int`):
 Threshold of mean used when determining a frame is full black.
 
-#### `service_collection.slide.full_black_threshold_std`: `int`
+* `full_black_threshold_std` (`int`):
 Threshold of standard deviation used when determining a frame is full black.
 
 ---
 
-### Transcription Service
+#### Transcription Service (`transcription`)
 
-#### `service_collection.transcription.transcriber.client`: `dict`
+* `transcriber.client` (`dict`):
 Kwargs used to initialized OpenAI client.
 
-#### `service_collection.transcription.transcriber.model`: `str`
+* `transcriber.model` (`str`):
 OpenAI model used for transcription
 
-#### `service_collection.transcription.transcriber.language`: `str`
+* `transcriber.language` (`str`):
 Language that may appear in the audio being transcribed.
 
-#### `service_collection.transcription.run_delay`: `float`
+* `run_delay` (`float`):
 Additional delay between each transcription process.
 
 
