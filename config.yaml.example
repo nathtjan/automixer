@@ -25,9 +25,24 @@ mixer:
         samplerate: 48000
       read_frames: 144000
     - service_type: "mixing"
-      rouge_1gram_weight: 0.9
-      rouge_l_weight: 0.1
-      slide2cam_threshold: 0.8
+      slide2cam_scorer:
+        scorer_type: "weighted_average"
+        weight_scorer_set:
+          - weight: 0.9
+            scorer:
+              scorer_type: "rouge_1gram"
+              tolerance: 3
+          - weight: 0.1
+            scorer:
+              scorer_type: "rouge_l"
+      slide2cam_jury:
+        jury_type: "or"
+        juries:
+          - jury_type: "threshold"
+            threshold: 0.95
+          - jury_type: "total_variation_threshold"
+            threshold: 0.1
+            length: 10
       slide2cam_delay: 1
     - service_type: "ocr"
       reader:

@@ -151,11 +151,109 @@ class MicServiceConfig(BaseServiceConfig):
     _class: ClassVar[type] = services.MicService
 
 
+class BaseSlide2CamScorerConfig(InstantiableClassConfig):
+    pass
+
+
+class ROUGELSlide2CamScorerConfig(BaseSlide2CamScorerConfig):
+    scorer_type: Literal["rouge_l"] = "rouge_l"
+    _class: ClassVar[type] = services.ROUGELSlide2CamScorer
+
+
+class ROUGE1GramSlide2CamScorerConfig(BaseSlide2CamScorerConfig):
+    scorer_type: Literal["rouge_1gram"] = "rouge_1gram"
+    tolerance: int = 3
+    _class: ClassVar[type] = services.ROUGE1GramSlide2CamScorer
+
+
+class WeightedScorerItemConfig(InstantiableClassConfig):
+    weight: float
+    scorer: Annotated[
+        Union[
+            ROUGELSlide2CamScorerConfig,
+            ROUGE1GramSlide2CamScorerConfig,
+        ],
+        Field(discriminator="scorer_type")
+    ]
+    _class: ClassVar[type] = dict
+
+    @classmethod
+    def filter_kwargs(cls, kwargs: dict) -> dict:
+        # Assume all kwargs are valid
+        return kwargs
+
+    @classmethod
+    def filter_global_kwargs(cls, kwargs: dict) -> dict:
+        # Drop all global kwargs
+        return {}
+
+
+class WeightedAverageSlide2CamScorerConfig(BaseSlide2CamScorerConfig):
+    scorer_type: Literal["weighted_average"] = "weighted_average"
+    weight_scorer_set: List[WeightedScorerItemConfig]
+    _class: ClassVar[type] = services.WeightedAverageSlide2CamScorer
+
+
+class BaseSlide2CamJuryConfig(InstantiableClassConfig):
+    pass
+
+
+class ThresholdSlide2CamJuryConfig(BaseSlide2CamJuryConfig):
+    jury_type: Literal["threshold"] = "threshold"
+    threshold: float
+    _class: ClassVar[type] = services.ThresholdSlide2CamJury
+
+
+class TotalVariationThresholdSlide2CamJuryConfig(BaseSlide2CamJuryConfig):
+    jury_type: Literal["total_variation_threshold"] = "total_variation_threshold"
+    threshold: float
+    length: int = 0
+    _class: ClassVar[type] = services.TotalVariationThresholdSlide2CamJury
+
+
+class AndSlide2CamJuryConfig(BaseSlide2CamJuryConfig):
+    jury_type: Literal["and"] = "and"
+    juries: List[Annotated[
+        Union[
+            ThresholdSlide2CamJuryConfig,
+            TotalVariationThresholdSlide2CamJuryConfig,
+        ],
+        Field(discriminator="jury_type")
+    ]]
+    _class: ClassVar[type] = services.AndSlide2CamJury
+
+
+class OrSlide2CamJuryConfig(BaseSlide2CamJuryConfig):
+    jury_type: Literal["or"] = "or"
+    juries: List[Annotated[
+        Union[
+            ThresholdSlide2CamJuryConfig,
+            TotalVariationThresholdSlide2CamJuryConfig,
+        ],
+        Field(discriminator="jury_type")
+    ]]
+    _class: ClassVar[type] = services.OrSlide2CamJury
+
+
 class MixingServiceConfig(BaseServiceConfig):
     service_type: Literal["mixing"] = "mixing"
-    rouge_1gram_weight: float
-    rouge_l_weight: float
-    slide2cam_threshold: float
+    slide2cam_scorer: Annotated[
+        Union[
+            ROUGELSlide2CamScorerConfig,
+            ROUGE1GramSlide2CamScorerConfig,
+            WeightedAverageSlide2CamScorerConfig,
+        ],
+        Field(discriminator="scorer_type")
+    ]
+    slide2cam_jury: Annotated[
+        Union[
+            ThresholdSlide2CamJuryConfig,
+            TotalVariationThresholdSlide2CamJuryConfig,
+            AndSlide2CamJuryConfig,
+            OrSlide2CamJuryConfig,
+        ],
+        Field(discriminator="jury_type")
+    ]
     slide2cam_delay: float
     _class: ClassVar[type] = services.MixingService
 
@@ -225,6 +323,16 @@ __all__ = [
     "CameraServiceConfig",
     "InteractionServiceConfig",
     "MicServiceConfig",
+    "BaseSlide2CamScorerConfig",
+    "ROUGELSlide2CamScorerConfig",
+    "ROUGE1GramSlide2CamScorerConfig",
+    "WeightedScorerItemConfig",
+    "WeightedAverageSlide2CamScorerConfig",
+    "BaseSlide2CamJuryConfig",
+    "ThresholdSlide2CamJuryConfig",
+    "TotalVariationThresholdSlide2CamJuryConfig",
+    "AndSlide2CamJuryConfig",
+    "OrSlide2CamJuryConfig",
     "MixingServiceConfig",
     "OCRServiceConfig",
     "SlideServiceConfig",

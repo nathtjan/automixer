@@ -180,17 +180,75 @@ The number of audio frames read for each audio segment. For example, if the samp
 
 #### Mixing Service (`mixing`)
 
-* `rouge_1gram_weight` (`float`):
-Weight of ROUGE-1. This is used for calculating `slide2camscore`: a score that is being thresholded to decide changing program to camera scene when currently showing slide scene.
+* `slide2cam_scorer` (`dict`):
+Scorer configuration used to compute `slide2camscore`. Supported scorer types are:
+`rouge_1gram`, `rouge_l`, and `weighted_average`.
 
-* `rouge_l_weight` (`float`):
-Weight of ROUGE-L. This is also used for calculating `slide2camscore`
-
-* `slide2cam_threshold` (`float`):
-Threshold value of `slide2camscore`.
+* `slide2cam_jury` (`dict`):
+Jury configuration used to decide whether the score sequence indicates switching to camera.
+Supported jury types are: `threshold`, `total_variation_threshold`, `and`, `or`.
 
 * `slide2cam_delay` (`int`):
 Delay between the time the slide2cam decision is made and it being acted upon. If a slide change is detected during this delay period, the slide2cam decision will be overriden/cancelled.
+
+##### Scorer Type: `rouge_1gram`
+
+* `scorer_type` (`"rouge_1gram"`):
+Word-level fuzzy LCS scorer. Compares OCR words and transcription words with edit-distance tolerance and returns a normalized overlap score.
+
+* `tolerance` (`int`, default: `3`):
+Maximum Levenshtein distance for two words to be treated as equal.
+
+##### Scorer Type: `rouge_l`
+
+* `scorer_type` (`"rouge_l"`):
+Exact-token LCS scorer. Computes ROUGE-L style sequence overlap between slide text and transcription.
+
+##### Scorer Type: `weighted_average`
+
+* `scorer_type` (`"weighted_average"`):
+Composite scorer that combines multiple child scorers.
+
+* `weight_scorer_set` (`list[dict]`):
+List of weighted scorer items used to compute the final score as a weighted mean.
+
+* Weighted scorer item fields:
+Each item must provide `weight` (`float`) and `scorer` (`dict`, one scorer config).
+
+##### Jury Type: `threshold`
+
+* `jury_type` (`"threshold"`):
+Passes when the latest score is greater than or equal to `threshold`.
+
+* `threshold` (`float`):
+Minimum latest-score value required to pass.
+
+##### Jury Type: `total_variation_threshold`
+
+* `jury_type` (`"total_variation_threshold"`):
+Passes when score fluctuation is stable enough over a selected window.
+
+* `threshold` (`float`):
+Maximum allowed total variation (sum of absolute deltas between consecutive scores in the window).
+
+* `length` (`int`, default: `0`):
+Window size for the variation check. `0` means use all available scores.
+
+##### Jury Type: `and`
+
+* `jury_type` (`"and"`):
+Logical AND composition. Passes only if all child juries pass.
+
+* `juries` (`list[dict]`):
+List of child jury configs.
+
+##### Jury Type: `or`
+
+* `jury_type` (`"or"`):
+Logical OR composition. Passes if at least one child jury passes.
+
+* `juries` (`list[dict]`):
+List of child jury configs.
 
 ---
 
