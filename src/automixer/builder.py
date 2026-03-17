@@ -27,10 +27,11 @@ def build_from_config(
     """
     # Get the class and arguments from the config
     init_kwargs = dict(config)
-    init_kwargs.update(global_kwargs)
+    init_kwargs.update(config.filter_global_kwargs(global_kwargs))
     init_kwargs = config.filter_kwargs(init_kwargs)
 
     for key, value in init_kwargs.items():
+        # global_kwargs used here is the original, not the filtered one
         init_kwargs[key] = _build_nested(value, **global_kwargs)
 
     return config.instantiate(**init_kwargs)

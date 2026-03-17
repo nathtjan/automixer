@@ -127,8 +127,8 @@ Configuration file starts with the `version` of it. Look at `config.yaml.example
 
 #### Camera Service (`camera`)
 
-* `camera.index` (`int`):
-Index of the OBS virtual camera
+* `camera` (`dict`):
+Initialization keyword arguments for `cv2.VideoCapture`. Ensure you set the `index` argument.
 
 * `read_delay` (`float`):
 Delay between each frame capture
@@ -162,17 +162,11 @@ Delay between each program check (program name request).
 
 #### Mic Service (`mic`)
 
-* `input_stream.device` (`int`):
-Device index used as mic. Normally, this will be the index of VAC output.
-
-* `input_stream.channels` (`int`):
-VAC output's number of channels. If multiple, will be converted to mono.
-
-* `input_stream.samplerate` (`int`):
-Sampling rate of the VAC output. Set to `16000` to prevent resampling when transcribing.
+* `input_stream` (`dict`):
+Initialization keyword arguments for `sounddevice.InputStream`. Normally, the `device` argument used will be the VAC input device index.
 
 * `read_frames` (`int`):
-The number of audio frames read for each audio segment. For example, if the sampling rate is set to `16000` and you want to set each audio segments to be 2 seconds long, set this value to `32000`. Consider the latency-accuracy tradeoff when changing this value.
+The number of audio frames read for each audio segment. For example, if the sampling rate is set to `48000` and you want to set each audio segments to be 2 seconds long, set this value to `96000`. Consider the latency-accuracy tradeoff when changing this value.
 
 ---
 
@@ -195,7 +189,7 @@ Delay between the time the slide2cam decision is made and it being acted upon. I
 #### OCR Service (`ocr`)
 
 * `reader` (`dict`):
-Kwargs used to initialize EasyOCR Reader.
+Initialization keyword arguments for `easyocr.reader`. Ensure you set the `lang_list` argument.
 
 * `expect_frame_timeout` (`float`):
 Maximum duration between program change happening and a valid camera frame is received to be OCR-ed.
@@ -221,7 +215,7 @@ Threshold of standard deviation used when determining a frame is full black.
 #### Transcription Service (`transcription`)
 
 * `transcriber.client` (`dict`):
-Kwargs used to initialized OpenAI client.
+Initialization keyword arguments for `openai.OpenAI`. This is usually left empty if you already provide the API key using environment variable.
 
 * `transcriber.model` (`str`):
 OpenAI model used for transcription

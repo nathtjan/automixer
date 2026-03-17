@@ -26,24 +26,35 @@ class InstantiableClassConfig(BaseModel):
         return {k: v for k, v in kwargs.items() if k in param_names}
 
     @classmethod
+    def filter_global_kwargs(cls, kwargs: dict) -> dict:
+        return kwargs
+
+    @classmethod
     def instantiate(cls, *args, **kwargs) -> object:
         return cls.get_class()(*args, **kwargs)
 
 
-class CameraConfig(InstantiableClassConfig):
-    index: int
-    _class: ClassVar[type] = cv2.VideoCapture
+class InstantiableThirdPartyClassConfig(InstantiableClassConfig):
+    model_config = {
+        "extra": "allow"
+    }
 
     @classmethod
     def filter_kwargs(cls, kwargs: dict) -> dict:
-        return {"index": kwargs["index"]}  # cv2.VideoCapture only accepts 'index' as an argument
+        # Assume all kwargs are valid
+        return kwargs
+
+    @classmethod
+    def filter_global_kwargs(cls, kwargs: dict) -> dict:
+        # Drop all global kwargs
+        return {}
 
 
-class MicConfig(InstantiableClassConfig):
-    device: int
-    channels: int
-    samplerate: int
-    blocksize: int = 1024
+class CameraConfig(InstantiableThirdPartyClassConfig):
+    _class: ClassVar[type] = cv2.VideoCapture
+
+
+class MicConfig(InstantiableThirdPartyClassConfig):
     _class: ClassVar[type] = sd.InputStream
 
 
@@ -62,12 +73,11 @@ class OBSInteractorConfig(InstantiableClassConfig):
         return cls.get_class()(*args, **kwargs)
 
 
-class OCRReaderConfig(InstantiableClassConfig):
-    lang_list: List[str]
+class OCRReaderConfig(InstantiableThirdPartyClassConfig):
     _class: ClassVar[type] = easyocr.Reader
 
 
-class OpenAIClientConfig(InstantiableClassConfig):
+class OpenAIClientConfig(InstantiableThirdPartyClassConfig):
     _class: ClassVar[type] = OpenAI
 
 
