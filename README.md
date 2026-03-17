@@ -92,6 +92,21 @@ Run Automixer in verbose mode to outputs debug log using `-v` or `--verbose` fla
 automixer -v
 ```
 
+### File logging
+You can save logs to a file in two ways (mutually exclusive):
+
+- `--log-dir`: provide a directory and Automixer will create a log file named with startup timestamp, ending with `.log`.
+- `--log-file`: provide the exact log file path. If the file already exists, the logs will be appended instead of being overwritten.
+
+Examples:
+```bash
+automixer --log-dir ./logs
+```
+or
+```bash
+automixer --log-file ./logs/session.log
+```
+
 ## Environment Variables Reference
 - `OPENAI_API_KEY` (required): used by the OpenAI client for authentication.
 - `OBS_PASSWORD` (optional): OBS WebSocket password (used when not provided in config).

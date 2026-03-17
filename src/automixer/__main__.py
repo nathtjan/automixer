@@ -1,6 +1,8 @@
 import argparse
 import asyncio
+from datetime import datetime
 import logging
+from pathlib import Path
 from typing import Tuple
 
 from dotenv import load_dotenv
@@ -66,11 +68,27 @@ async def run_with_tui(config_path: str):
         root_logger.removeHandler(log_handler)
 
 
-def configure_logging(level: int, to_console: bool):
+def resolve_log_file_path(log_dir: str | None, log_file: str | None) -> Path | None:
+    """Resolve output log path from CLI flags and ensure parent directories exist."""
+    if log_file:
+        log_path = Path(log_file)
+    elif log_dir:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = Path(log_dir) / f"{timestamp}.log"
+    else:
+        return None
+
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    return log_path
+
+
+def configure_logging(level: int, to_console: bool, log_file_path: Path | None = None):
     """Set root logging handlers. For TUI we avoid console to prevent redraw issues."""
     handlers = []
     if to_console:
         handlers.append(logging.StreamHandler())
+    if log_file_path is not None:
+        handlers.append(logging.FileHandler(log_file_path, mode="a", encoding="utf-8"))
     logging.basicConfig(
         level=level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -84,16 +102,20 @@ def main():
     parser.add_argument("-c", "--config", type=str, default="./config.yaml", help="Path to the YAML configuration file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument("--headless", action="store_true", help="Run without Textual terminal UI")
+    log_group = parser.add_mutually_exclusive_group()
+    log_group.add_argument("--log-dir", type=str, help="Directory for log files; filename will use startup timestamp")
+    log_group.add_argument("--log-file", type=str, help="Path to log file")
     args = parser.parse_args()
 
     load_dotenv()
     level = logging.DEBUG if args.verbose else logging.INFO
+    log_file_path = resolve_log_file_path(args.log_dir, args.log_file)
 
     if args.headless:
-        configure_logging(level, to_console=True)
+        configure_logging(level, to_console=True, log_file_path=log_file_path)
         asyncio.run(run_headless(args.config))
     else:
-        configure_logging(level, to_console=False)
+        configure_logging(level, to_console=False, log_file_path=log_file_path)
         asyncio.run(run_with_tui(args.config))
 
 
