@@ -45,3 +45,17 @@ mixer:
         model: "gpt-4o-transcribe"
         language: "en"
       run_delay: 0.1
+    - service_type: "notification"
+      notifier:
+        notifier_type: "mqtt"
+        host: ${MQTT_HOST}
+        port: ${MQTT_PORT}
+        topic: "automixer/events"
+        qos: 1
+        retain: false
+        use_tls: false
+        mqtt_version: 5
+        # username: ${MQTT_USERNAME}
+        # password: ${MQTT_PASSWORD}
+      include_event_types:
+        - "ProgramChangeEvent"

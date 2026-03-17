@@ -28,6 +28,9 @@ automixer = "automixer.__main__:main"
 obs = [
   "obs-websocket-py",
 ]
+mqtt = [
+  "paho-mqtt",
+]
 
 [build-system]
 requires = ["setuptools>=64", "wheel"]

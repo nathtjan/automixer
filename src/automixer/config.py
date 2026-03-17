@@ -97,6 +97,32 @@ class OpenAITranscriberConfig(InstantiableClassConfig):
         }
 
 
+class BaseNotifierConfig(InstantiableClassConfig):
+    pass
+
+
+class MQTTNotifierConfig(BaseNotifierConfig):
+    notifier_type: Literal["mqtt"] = "mqtt"
+    host: str
+    topic: str
+    port: int = 1883
+    qos: int = 0
+    retain: bool = False
+    keepalive: int = 60
+    use_tls: bool = False
+    mqtt_version: int = 5
+    client_id: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[SecretStr] = None
+    _class: ClassVar[type] = services.MQTTNotifier
+
+    @classmethod
+    def instantiate(cls, *args, **kwargs) -> object:
+        if "password" in kwargs and isinstance(kwargs["password"], SecretStr):
+            kwargs["password"] = kwargs["password"].get_secret_value()
+        return cls.get_class()(*args, **kwargs)
+
+
 class BaseServiceConfig(InstantiableClassConfig):
     pass  # For future common attributes
 
@@ -157,6 +183,17 @@ class TranscriptionServiceConfig(BaseServiceConfig):
     _class: ClassVar[type] = services.TranscriptionService
 
 
+class NotificationServiceConfig(BaseServiceConfig):
+    service_type: Literal["notification"] = "notification"
+    notifier: Annotated[
+        Union[MQTTNotifierConfig],
+        Field(discriminator="notifier_type")
+    ]
+    include_event_types: Optional[List[str]] = None
+    exclude_event_types: Optional[List[str]] = None
+    _class: ClassVar[type] = services.NotificationService
+
+
 class AutomixerConfig(InstantiableClassConfig):
     services: List[Annotated[
         Union[
@@ -167,6 +204,7 @@ class AutomixerConfig(InstantiableClassConfig):
             OCRServiceConfig,
             SlideServiceConfig,
             TranscriptionServiceConfig,
+            NotificationServiceConfig,
         ],
         Field(discriminator="service_type")
     ]]
@@ -181,6 +219,8 @@ __all__ = [
     "OCRReaderConfig",
     "OpenAIClientConfig",
     "OpenAITranscriberConfig",
+    "BaseNotifierConfig",
+    "MQTTNotifierConfig",
     "BaseServiceConfig",
     "CameraServiceConfig",
     "InteractionServiceConfig",
@@ -189,6 +229,7 @@ __all__ = [
     "OCRServiceConfig",
     "SlideServiceConfig",
     "TranscriptionServiceConfig",
+    "NotificationServiceConfig",
     "AutomixerConfig",
     "preprocess_config",
 ]

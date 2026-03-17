@@ -4,5 +4,6 @@ from automixer.services.interaction import *
 from automixer.services.mic import *
 from automixer.services.mixing import *
 from automixer.services.ocr import *
+from automixer.services.notification import *
 from automixer.services.slide import *
 from automixer.services.transcription import *

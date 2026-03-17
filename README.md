@@ -18,6 +18,8 @@ The comparison is done by thresholding weighted summation of ROUGE-1 and ROUGE-L
 - OBS
 ### Transcriber
 - OpenAI
+### Notifier
+- MQTT
 
 ## Requirements
 - Python >= 3.11
@@ -30,12 +32,14 @@ The comparison is done by thresholding weighted summation of ROUGE-1 and ROUGE-L
 
 1. Firstly, [**install Torch**](https://pytorch.org/get-started/locally/) according to your device setup.
 
-2. Then, **clone and install this repo** (including extra for OBS)
+2. Then, **clone and install this repo** (including extra for OBS and MQTT notification)
     ```bash
     git clone https://github.com/nathtjan/automixer.git
     cd automixer
-    pip install .[obs]
+    pip install .[obs,mqtt]
     ```
+
+    If you do not use notification service, `pip install .[obs]` is enough.
 
 3. **Copy environment file**
     ```bash
@@ -110,6 +114,10 @@ automixer --log-file ./logs/session.log
 ## Environment Variables Reference
 - `OPENAI_API_KEY` (required): used by the OpenAI client for authentication.
 - `OBS_PASSWORD` (optional): OBS WebSocket password (used when not provided in config).
+- `MQTT_HOST` (optional): MQTT broker host (used when notification service uses `${MQTT_HOST}`).
+- `MQTT_PORT` (optional): MQTT broker port (used when notification service uses `${MQTT_PORT}`).
+- `MQTT_USERNAME` (optional): MQTT username.
+- `MQTT_PASSWORD` (optional): MQTT password.
 
 
 ## Configuration Reference
@@ -225,6 +233,67 @@ Language that may appear in the audio being transcribed.
 
 * `run_delay` (`float`):
 Additional delay between each transcription process.
+
+---
+
+#### Notification Service (`notification`)
+
+`notification` service sends selected events through a notifier backend.
+
+* `notifier` (`str`):
+Notifier backend configuration.
+
+* `include_event_types` (`list[str]`, optional):
+If provided, only events in this list are sent.
+
+* `exclude_event_types` (`list[str]`, optional):
+Events in this list are not sent (applied after include filtering).
+
+##### MQTT Notifier (`mqtt`)
+
+* `host` (`str`):
+MQTT broker hostname or IP.
+
+* `port` (`int`, default: `1883`):
+MQTT broker port.
+
+* `topic` (`str`):
+MQTT topic used for published event notifications.
+
+* `qos` (`int`, default: `0`):
+MQTT QoS level (`0`, `1`, `2`).
+
+* `retain` (`bool`, default: `false`):
+Whether published notifications are retained by broker.
+
+* `keepalive` (`int`, default: `60`):
+MQTT keepalive interval in seconds.
+
+* `use_tls` (`bool`, default: `false`):
+Enable TLS for MQTT connection.
+
+* `mqtt_version` (`int`, default: `5`):
+MQTT protocol version value passed to Paho client.
+
+* `client_id` (`str`, optional):
+Custom MQTT client id.
+
+* `username` (`str`, optional):
+MQTT username.
+
+* `password` (`str`, optional):
+MQTT password.
+
+Published payload format:
+```json
+{
+    "event_type": "ProgramChangeEvent",
+    "data": {"...": "..."},
+    "timestamp": "2026-03-17T12:34:56.000000+00:00"
+}
+```
+
+In verbose mode (`-v`), MQTT notifier also logs callback lifecycle information (connect, disconnect, publish ack, etc.) to simplify broker troubleshooting.
 
 
 ## License

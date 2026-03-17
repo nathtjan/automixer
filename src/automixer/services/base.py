@@ -16,7 +16,7 @@ def _default_autoregister(func: callable) -> callable:
 
 def _custom_autoregister(
     func: callable,
-    event_type: Type[BaseEvent] = None,
+    event_type: Type[BaseEvent] | str = None,
     self_name: str = 'self'
 ) -> callable:
     func._autoregister = True
@@ -29,7 +29,7 @@ def _custom_autoregister(
 
 @overload
 def autoregister(
-    event_type: Type[BaseEvent] = None,
+    event_type: Type[BaseEvent] | str = None,
     self_name: str = 'self'
 ) -> callable:
     ...
