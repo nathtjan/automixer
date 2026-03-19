@@ -104,7 +104,7 @@ class BaseNotifierConfig(InstantiableClassConfig):
 class MQTTNotifierConfig(BaseNotifierConfig):
     notifier_type: Literal["mqtt"] = "mqtt"
     host: str
-    topic: str
+    base_topic: str
     port: int = 1883
     qos: int = 0
     retain: bool = False

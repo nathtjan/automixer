@@ -65,7 +65,7 @@ mixer:
         notifier_type: "mqtt"
         host: ${MQTT_HOST}
         port: ${MQTT_PORT}
-        topic: "automixer/events"
+        base_topic: "automixer/events"
         qos: 1
         retain: false
         use_tls: false
@@ -73,4 +73,4 @@ mixer:
         # username: ${MQTT_USERNAME}
         # password: ${MQTT_PASSWORD}
       include_event_types:
-        - "ProgramChangeEvent"
+        - "program_change"

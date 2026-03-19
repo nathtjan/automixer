@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Any
 
-from automixer.core.events import BaseEvent
-from automixer.services.base import BaseService, autoregister
+from automixer.core.events import BaseEvent, get_event_class
+from automixer.services.base import BaseService
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class MQTTNotifier(BaseNotifier):
     def __init__(
         self,
         host: str,
-        topic: str,
+        base_topic: str,
         port: int = 1883,
         qos: int = 0,
         retain: bool = False,
@@ -42,7 +42,7 @@ class MQTTNotifier(BaseNotifier):
     ):
         self.host = host
         self.port = port
-        self.topic = topic
+        self.base_topic = base_topic
         self.qos = qos
         self.retain = retain
         self.keepalive = keepalive
@@ -52,6 +52,7 @@ class MQTTNotifier(BaseNotifier):
         self.use_tls = use_tls
         self.mqtt_version = mqtt_version
         self._client = None
+        self._publish_topics: dict[int, str] = {}
 
     def up(self):
         # Lazy import so MQTT dependency stays optional unless used.
@@ -69,26 +70,26 @@ class MQTTNotifier(BaseNotifier):
         def on_connect(client, userdata, flags, reason_code, properties=None):
             if not _is_failure(reason_code):
                 logger.info(
-                    "MQTT notifier connected to %s:%s topic=%s",
+                    "MQTT notifier connected to %s:%s base_topic=%s",
                     self.host,
                     self.port,
-                    self.topic,
+                    self.base_topic,
                 )
             else:
                 logger.warning(
-                    "MQTT notifier connection rejected rc=%s host=%s port=%s topic=%s",
+                    "MQTT notifier connection rejected rc=%s host=%s port=%s base_topic=%s",
                     reason_code,
                     self.host,
                     self.port,
-                    self.topic,
+                    self.base_topic,
                 )
 
         def on_pre_connect(client, userdata):
             logger.debug(
-                "MQTT notifier preparing connection host=%s port=%s topic=%s",
+                "MQTT notifier preparing connection host=%s port=%s base_topic=%s",
                 self.host,
                 self.port,
-                self.topic,
+                self.base_topic,
             )
 
         def on_disconnect(
@@ -121,11 +122,12 @@ class MQTTNotifier(BaseNotifier):
             )
 
         def on_publish(client, userdata, mid, reason_code=None, properties=None):
+            topic = self._publish_topics.pop(mid, self.base_topic)
             logger.debug(
                 "MQTT notifier publish acknowledged mid=%s rc=%s topic=%s",
                 mid,
                 reason_code,
-                self.topic,
+                topic,
             )
 
         def on_subscribe(client, userdata, mid, reason_code_list, properties=None):
@@ -144,7 +146,7 @@ class MQTTNotifier(BaseNotifier):
 
         def on_message(client, userdata, message):
             logger.debug(
-                "MQTT notifier received message topic=%s qos=%s retained=%s payload_len=%s",
+                "MQTT notifier received message base_topic=%s qos=%s retained=%s payload_len=%s",
                 message.topic,
                 message.qos,
                 message.retain,
@@ -183,7 +185,13 @@ class MQTTNotifier(BaseNotifier):
         if self._client is None:
             raise RuntimeError("MQTT notifier has not been started")
         body = json.dumps(payload, default=str)
-        self._client.publish(self.topic, body, qos=self.qos, retain=self.retain)
+        # Modify topic to include event type name if available
+        topic = self.base_topic
+        event_type_name = payload.get("event_type_name")
+        if event_type_name:
+            topic = f"{topic}/{event_type_name}"
+        msg_info = self._client.publish(topic, body, qos=self.qos, retain=self.retain)
+        self._publish_topics[msg_info.mid] = topic
 
 
 class NotificationService(BaseService):
@@ -198,6 +206,30 @@ class NotificationService(BaseService):
         self.notifier = notifier
         self.include_event_types = set(include_event_types or [])
         self.exclude_event_types = set(exclude_event_types or [])
+        self._register_event_handlers()
+
+    def _register_event_handlers(self):
+        if not self.include_event_types:
+            self.bus.on("*", self.on_event)
+            logger.debug(
+                "Registered notification handler for all event types (*)"
+            )
+            return
+
+        for event_type_name in sorted(self.include_event_types):
+            event_cls = get_event_class(event_type_name)
+            if event_cls is None:
+                logger.warning(
+                    "NotificationService include_event_types contains unknown event name: %s",
+                    event_type_name,
+                )
+                continue
+
+            self.bus.on(event_cls, self.on_event)
+            logger.debug(
+                "Registered notification handler for event type: %s",
+                event_type_name,
+            )
 
     async def up(self):
         self.notifier.up()
@@ -216,23 +248,19 @@ class NotificationService(BaseService):
             data = dict(event.__dict__)
 
         payload = {
-            "event_type": event.__class__.__name__,
+            "event_type_name": event.get_name(),
             "data": data,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         return payload
 
-
     def _should_notify(self, event_type: str) -> bool:
-        if self.include_event_types and event_type not in self.include_event_types:
-            return False
         if self.exclude_event_types and event_type in self.exclude_event_types:
             return False
         return True
 
-    @autoregister(event_type="*")
     def on_event(self, event: BaseEvent):
-        event_type = event.__class__.__name__
+        event_type = event.get_name()
         if not self._should_notify(event_type):
             return
         payload = self._serialize_event(event)

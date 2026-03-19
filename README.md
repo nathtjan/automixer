@@ -302,10 +302,12 @@ Additional delay between each transcription process.
 Notifier backend configuration.
 
 * `include_event_types` (`list[str]`, optional):
-If provided, only events in this list are sent.
+If provided, only events in this list are sent. Values must use event names
+(for example `program_change`), not class names. Defaults to all events if not provided.
 
 * `exclude_event_types` (`list[str]`, optional):
-Events in this list are not sent (applied after include filtering).
+Events in this list are not sent (applied after include filtering). Values
+must use event names.
 
 ##### MQTT Notifier (`mqtt`)
 
@@ -315,8 +317,11 @@ MQTT broker hostname or IP.
 * `port` (`int`, default: `1883`):
 MQTT broker port.
 
-* `topic` (`str`):
-MQTT topic used for published event notifications.
+* `base_topic` (`str`):
+MQTT base topic used for publishing event notifications.
+The events will be published to `{base_topic}/{event_type_name}`
+(e.g. `automixer/events/program_change`)
+for more robust topic/event subscription.
 
 * `qos` (`int`, default: `0`):
 MQTT QoS level (`0`, `1`, `2`).
@@ -345,7 +350,7 @@ MQTT password.
 Published payload format:
 ```json
 {
-    "event_type": "ProgramChangeEvent",
+    "event_type_name": "program_change",
     "data": {"...": "..."},
     "timestamp": "2026-03-17T12:34:56.000000+00:00"
 }
