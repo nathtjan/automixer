@@ -1,7 +1,7 @@
 [project]
 name = "automixer"
-version = "0.1.0"
-description = "Video mixer automation for Reformed Exodus Community streamings"
+version = "1.0.0"
+description = "Multimedia automation for video mixing sermon/presentation (switching between camera and slide)."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
