@@ -176,6 +176,9 @@ Initialization keyword arguments for `sounddevice.InputStream`. Normally, the `d
 * `read_frames` (`int`):
 The number of audio frames read for each audio segment. For example, if the sampling rate is set to `48000` and you want to set each audio segments to be 2 seconds long, set this value to `96000`. Consider the latency-accuracy tradeoff when changing this value.
 
+* `preroll_seconds` (`float`, default: `0.0`):
+Amount of recent microphone audio to keep in a rolling buffer while mic dispatch is inactive. When mic becomes active again, the buffered audio is emitted first so transcription can include the last few seconds before activation.
+
 ---
 
 #### Mixing Service (`mixing`)

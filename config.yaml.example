@@ -24,6 +24,7 @@ mixer:
         channels: 2
         samplerate: 48000
       read_frames: 144000
+      preroll_seconds: 3.0
     - service_type: "mixing"
       slide2cam_scorer:
         scorer_type: "weighted_average"

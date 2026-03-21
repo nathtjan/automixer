@@ -148,6 +148,7 @@ class MicServiceConfig(BaseServiceConfig):
     service_type: Literal["mic"] = "mic"
     input_stream: MicConfig
     read_frames: int
+    preroll_seconds: float = 0.0
     _class: ClassVar[type] = services.MicService
 
 
