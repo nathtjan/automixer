@@ -218,6 +218,8 @@ class AndSlide2CamJuryConfig(BaseSlide2CamJuryConfig):
         Union[
             ThresholdSlide2CamJuryConfig,
             TotalVariationThresholdSlide2CamJuryConfig,
+            "AndSlide2CamJuryConfig",
+            "OrSlide2CamJuryConfig",
         ],
         Field(discriminator="jury_type")
     ]]
@@ -230,6 +232,8 @@ class OrSlide2CamJuryConfig(BaseSlide2CamJuryConfig):
         Union[
             ThresholdSlide2CamJuryConfig,
             TotalVariationThresholdSlide2CamJuryConfig,
+            "AndSlide2CamJuryConfig",
+            "OrSlide2CamJuryConfig",
         ],
         Field(discriminator="jury_type")
     ]]
